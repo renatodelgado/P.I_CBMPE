@@ -1,20 +1,53 @@
 import styled from "styled-components";
 
-export const Wrapper = styled.div`
+export const Background = styled.div`
+  background-color: #1E293B;
+  width: 100vw;
+  height: 100vh;
   display: flex;
-  justify-content: center; 
-  align-items: center;     
-  height: 100vh;           
+  justify-content: center;
+  align-items: center;
+  `;
+
+export const Wrapper = styled.div`             
   background-color: #f5f5f5; 
+  width: 400px;
+  padding: 20px;
+  border-radius: 8px;
 `;
 
+export const Header = styled.div`
+  text-align: center;
+  margin-bottom: 20px;
+
+  h1 {
+    margin: 0; 
+    font-size: 40px; 
+    font-weight: 550;
+  }
+
+  h2 {
+    margin: 5px 0 0 0; 
+    font-size: 16px; 
+    font-weight: normal; 
+    max-width: 250px;
+    margin-left: auto;
+    margin-right: auto;
+    font-weight: 640;
+    
+  }
+`;
 
 export const Container = styled.div`
   max-width: 400px;
-  margin: 50px auto;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  margin: 2px auto;
+  padding: 5px;
+`;
+
+export const LogoLogin = styled.img`
+  width: 60px;
+  display: block;
+  margin: 0 auto 2px auto;
 `;
 
 export const Input = styled.input`
