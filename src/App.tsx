@@ -4,7 +4,7 @@ import { Login } from "./pages/Login";
 import {Dashboard} from "./pages/Dashboard";
 import {Auditoria} from "./pages/Auditoria";
 import {Usuarios} from "./pages/Usuarios";
-import { Ocorrencias } from "./pages/Ocorrencias";
+import { Ocorrencias } from "./pages/pageListaOcorrencia/ListaOcorrencias";
 import { Relatorios } from "./pages/Relatorios";
 import{ BrowserRouter, Route, Routes } from "react-router-dom";
 import { Header } from "./components/Header";
