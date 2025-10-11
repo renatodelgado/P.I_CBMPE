@@ -8,5 +8,5 @@ export function FilterComponent() {
 }
 
 <FilterCard>
-
+      <h1>Lista de Ocorrências</h1>
 </FilterCard>
