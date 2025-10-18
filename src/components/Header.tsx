@@ -1,5 +1,5 @@
 import { Container, Logo, Menu, MenuItem } from "./Header.styles";
-import logoImg from "../assets/logo 1.png";
+import logoImg from "../assets/logo.svg";
 import { useNavigate } from "react-router-dom";
 
 export function Header() {

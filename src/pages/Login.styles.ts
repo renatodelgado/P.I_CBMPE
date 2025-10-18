@@ -1,8 +1,7 @@
 import styled from "styled-components";
 
-export const Background = styled.div`
+export const Background = styled.body`
   background-color: #1E293B;
-  width: 100vw;
   height: 100vh;
   display: flex;
   justify-content: center;

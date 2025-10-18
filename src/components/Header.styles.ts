@@ -12,13 +12,16 @@ export const Container = styled.header`
   top: 0;
   left: 0;
   right: 0;
-  height: 60px;
-  z-index: 10;
+  width: 100%;
+  height: 15%;
+  box-sizing: border-box;
+  z-index: 1000;
 `;
 
 export const Logo = styled.img`
   width: 45px;
   cursor: pointer;
+  filter: brightness(0) invert(1);
 `;
 
 export const Menu = styled.nav`
