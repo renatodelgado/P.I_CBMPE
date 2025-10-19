@@ -1,7 +1,24 @@
 import { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { Container, Input, Button, Wrapper, Background, LogoLogin, Header, ContainerContent, Label, RememberMe, Checkbox, InputWrapper, InputIcon } from "./Login.styles";
-import logoImg from "../assets/logo 1.png";
+import {
+  Container,
+  Input,
+  Button,
+  Wrapper,
+  Background,
+  LogoLogin,
+  Header,
+  ContainerContent,
+  Label,
+  RememberMe,
+  Checkbox,
+  InputWrapper,
+  InputIcon,
+  DivLogin,
+  ForgotPassword,
+  RememberMeForgotPassword,
+} from "./Login.styles";
+import logoImg from "../assets/logo.svg";
 import userIcon from "../assets/clipboard.svg";
 import lockIcon from "../assets/lock.svg";
 
@@ -16,50 +33,53 @@ export function Login() {
 
   return (
     <Background>
-      <Wrapper>
-        <LogoLogin src={logoImg} alt="Logo" />
-        <Header>
-          <h1>Chama</h1>
-          <h2>Sistema de Gestão de Ocorrências CBMPE</h2>
-        </Header>
-        <Container>
-          <ContainerContent>
-            <Label>Matrícula</Label>
-            <InputWrapper>
-              <InputIcon src={userIcon} alt="Ícone" />
-              <Input
-                type="text"
-                placeholder="Digite sua matrícula"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </InputWrapper>
+      <DivLogin>
+        <Wrapper>
+          <LogoLogin src={logoImg} alt="Logo" />
+          <Header>
+            <h1>Chama</h1>
+            <h2>Sistema de Gestão de Ocorrências CBMPE</h2>
+          </Header>
 
-            <Label>Senha</Label>
-            <InputWrapper>
-              <InputIcon src={lockIcon} alt="Ícone" />
-              <Input
-              type="password"
-              placeholder="Digite sua senha"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            </InputWrapper>
-            
-          </ContainerContent>
-          <RememberMe>
-            <Checkbox />
-            <p>Lembrar de mim</p>
-            <p style={{ marginLeft: 'auto' }}>
-              <a href="#">Esqueci minha senha</a>
-            </p>
-          </RememberMe>
-          <Button onClick={handleLogin}>Entrar</Button>
+            <ContainerContent>
+              <Label>Matrícula</Label>
+              <InputWrapper>
+                <InputIcon src={userIcon} alt="Ícone de usuário" />
+                <Input
+                  type="text"
+                  placeholder="Digite sua matrícula"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </InputWrapper>
 
-        </Container>
-      </Wrapper>
+              <Label>Senha</Label>
+              <InputWrapper>
+                <InputIcon src={lockIcon} alt="Ícone de cadeado" />
+                <Input
+                  type="password"
+                  placeholder="Digite sua senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </InputWrapper>
+            </ContainerContent>
+
+            <RememberMeForgotPassword>
+              <RememberMe>
+                <Checkbox />
+                <p>Lembrar de mim</p>
+              </RememberMe>
+              <ForgotPassword>
+                <p style={{ marginLeft: "auto" }}>
+                  <a href="#">Esqueci minha senha</a>
+                </p>
+              </ForgotPassword>
+            </RememberMeForgotPassword>
+
+            <Button onClick={handleLogin}>Entrar</Button>
+        </Wrapper>
+      </DivLogin>
     </Background>
-
-
   );
 }

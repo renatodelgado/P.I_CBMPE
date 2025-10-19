@@ -6,7 +6,7 @@ import {Auditoria} from "./pages/Auditoria";
 import { Ocorrencias } from "./pages/pageListaOcorrencia/ListaOcorrencias";
 import { Relatorios } from "./pages/Relatorios";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { Header } from "./components/Header";
+import { Header } from "./components/Header/Header";
 import { NovaOcorrencia } from "./pages/pageNovaOcorrencia/CadastrarOcorrencia";
 import { NovoUsuario } from "./pages/usuarios/CadastrarUsuario";
 import { ListarUsuarios } from "./pages/usuarios/ListarUsuarios";
