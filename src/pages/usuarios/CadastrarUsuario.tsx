@@ -18,6 +18,7 @@ import {
 } from "../../components/EstilosPainel.styles";
 import { PerfilCard } from "../../components/NewUserPerfilCard/NewUserPerfilCards";
 import { Button } from "../../components/Button";
+import axios from "axios";
 
 export function NovoUsuario() {
   const [nome, setNome] = useState("");
@@ -61,26 +62,37 @@ export function NovoUsuario() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log({
-      nome,
-      email,
-      telefone: onlyDigits(telefone),
-      cpf: onlyDigits(cpf),
-      matricula,
-      perfil,
-      status,
-      unidade,
-      superior,
-      turno,
-      permissoes: {
-        relatorios: true,
-        gerenciarUsuarios: false,
-        editarOcorrencias: false,
-      },
-    });
+  const handleSubmit = async (e: React.FormEvent) => {
+  
+  e.preventDefault();
+
+  const perfilIdMap: Record<string, number> = {
+    "Administrador": 1,
+    "Gestor de Ocorrências": 2,
+    "Analista Estatístico": 3,
+    "Operador de Campo": 4,
   };
+
+  const newUser = {
+    nome,
+    patente: "Soldado", 
+    funcao: "Brigadista", 
+    email,
+    senha: "123456", 
+    unidadeOperacional: { id: 1 }, 
+    perfil: { id: perfilIdMap[perfil] || 1 }, 
+  };
+
+  try {
+    const response = await axios.post("http://localhost:3333/users", newUser);
+    console.log("✅ Usuário cadastrado com sucesso:", response.data);
+    alert("Usuário cadastrado com sucesso!");
+  } catch (error: any) {
+    console.error("❌ Erro ao cadastrar usuário:", error);
+    alert("Erro ao cadastrar usuário: " + (error.response?.data?.message || error.message));
+  }
+};
+  
 
   return (
     <ContainerPainel>
@@ -127,7 +139,7 @@ export function NovoUsuario() {
                     value={cpf}
                     onChange={(e) => setCpf(formatCPF(e.target.value))}
                     maxLength={14}
-                    required
+                    
                   />
                 </Field>
 
@@ -138,7 +150,7 @@ export function NovoUsuario() {
                     placeholder="usuario@cbm.pe.gov.br"
                     value={email}
                     onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
-                    required
+                    
                   />
                 </Field>
 
@@ -150,18 +162,18 @@ export function NovoUsuario() {
                     value={telefone}
                     onChange={(e) => setTelefone(formatPhone(e.target.value))}
                     maxLength={15}
-                    required
+                    
                   />
                 </Field>
 
-                                <Field>
+                <Field>
                   <label className="required">Matrícula</label>
                   <input
                     type="text"
                     placeholder="Ex: 123456"
                     value={matricula}
                     onChange={(e) => setMatricula(e.target.value)}
-                    required
+                    
                   />
                 </Field>
 
