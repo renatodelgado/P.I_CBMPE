@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { UserIcon, TreeViewIcon, ShieldCheckIcon, CheckSquareIcon } from "@phosphor-icons/react";
 import { Breadcrumb } from "../../components/Breadcrumb";
 import {
@@ -21,6 +22,7 @@ import { Button } from "../../components/Button";
 import axios from "axios";
 
 export function NovoUsuario() {
+  const navigate = useNavigate();
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -87,9 +89,15 @@ export function NovoUsuario() {
     const response = await axios.post("http://localhost:3333/users", newUser);
     console.log("✅ Usuário cadastrado com sucesso:", response.data);
     alert("Usuário cadastrado com sucesso!");
-  } catch (error: any) {
-    console.error("❌ Erro ao cadastrar usuário:", error);
-    alert("Erro ao cadastrar usuário: " + (error.response?.data?.message || error.message));
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.error("❌ Erro ao cadastrar usuário:", error);
+      const remoteMessage = (error.response?.data as { message?: string } | undefined)?.message;
+      alert("Erro ao cadastrar usuário: " + (remoteMessage ?? error.message));
+    } else {
+      console.error("❌ Erro ao cadastrar usuário:", error);
+      alert("Erro ao cadastrar usuário: " + String(error));
+    }
   }
 };
   
@@ -99,7 +107,7 @@ export function NovoUsuario() {
       <PageTopHeader>
         <Breadcrumb
           items={[
-            { label: "Usuários", onClick: () => console.log("Voltar à lista de usuários") },
+            { label: "Usuários", onClick: () => navigate("/usuarios") },
             { label: "Cadastrar Usuário" },
           ]}
         />

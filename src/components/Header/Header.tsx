@@ -19,8 +19,8 @@ import {
   MobileSubmenu,
 } from "./Header.styles";
 import logoImg from "../../assets/logo.svg";
-import { GaugeIcon, ChartBarIcon, PlusIcon, FileTextIcon, UserPlusIcon, PencilSimpleIcon, MagnifyingGlassIcon, ListIcon, XIcon } from "@phosphor-icons/react";
-import { UserDropdown } from "../UserDropdown";
+import { GaugeIcon, ChartBarIcon, PlusIcon, FileTextIcon, UserPlusIcon, PencilSimpleIcon, ListIcon, XIcon } from "@phosphor-icons/react";
+import { UserDropdown } from "../UserDropdown/UserDropdown";
 import { NotificationsDropdown } from "../NotificationsDropdown/NotificationsDropdown";
 
 export function Header() {
@@ -50,13 +50,13 @@ export function Header() {
       label: "Relatórios",
       to: "/relatorios",
       children: [
-        { key: "rapido", label: "Relatório Rápido", to: "/relatorios/placeholder1", icon: <FileTextIcon size={16} weight="bold" /> },
+        { key: "rapido", label: "Relatório Rápido", to: "/relatorios/rapido", icon: <FileTextIcon size={16} weight="bold" /> },
       ],
     },
     {
-      key: "usuario",
-      label: "Usuário",
-      to: "/usuario",
+      key: "usuarios",
+      label: "Usuários",
+      to: "/usuarios",
       children: [
         { key: "cadastrarUsuario", label: "Cadastrar Usuário", to: "/usuarios/cadastrar", icon: <UserPlusIcon size={16} weight="bold" /> },
         { key: "editarUsuario", label: "Editar Usuário", to: "/usuarios/editar", icon: <PencilSimpleIcon size={16} weight="bold" /> },
@@ -66,9 +66,7 @@ export function Header() {
       key: "auditoria",
       label: "Auditoria",
       to: "/auditoria",
-      children: [
-        { key: "ver", label: "Visualizar Auditoria", to: "/auditoria/placeholder", icon: <MagnifyingGlassIcon size={16} weight="bold" /> },
-      ],
+      children: [],
     },
   ];
 
