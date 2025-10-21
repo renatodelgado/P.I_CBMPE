@@ -36,7 +36,10 @@ import {
   TituloSecao,
   CardEstatistica,
   NumeroEstatistica,
-  LabelEstatistica
+  LabelEstatistica,
+  LayoutResponsivo,
+  AreaPrincipal,
+  ContainerBotoesFiltro
 } from "./filterCard.styles";
 
 export function FilterComponent() {
@@ -103,21 +106,21 @@ export function FilterComponent() {
         <BotaoNovaOcorrencia>+ Nova ocorrência</BotaoNovaOcorrencia>
       </CabecalhoTela>
 
-      <div style={{ display: 'flex', gap: '24px' }}>
+      <LayoutResponsivo>
         {/* Área Principal */}
-        <div style={{ flex: 1 }}>
+        <AreaPrincipal>
           {/* Seção de Filtros */}
           <SecaoFiltros>
             <LinhaFiltros>
               <CampoFiltro>
                 <LabelCampo>Período</LabelCampo>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                   <InputData 
                     type="date" 
                     value={periodoInicio}
                     onChange={(e) => setPeriodoInicio(e.target.value)}
                   />
-                  <span>até</span>
+                  <span style={{ fontSize: '12px', color: '#6B7280' }}>até</span>
                   <InputData 
                     type="date" 
                     value={periodoFim}
@@ -154,29 +157,29 @@ export function FilterComponent() {
 
               <CampoFiltro>
                 <LabelCampo>Status</LabelCampo>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px' }}>
                     <input 
                       type="checkbox" 
                       checked={statusPendente}
                       onChange={(e) => setStatusPendente(e.target.checked)}
-                    />{' '}
+                    />
                     Pendente
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px' }}>
                     <input 
                       type="checkbox" 
                       checked={statusConcluido}
                       onChange={(e) => setStatusConcluido(e.target.checked)}
-                    />{' '}
+                    />
                     Concluído
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px' }}>
                     <input 
                       type="checkbox" 
                       checked={statusAndamento}
                       onChange={(e) => setStatusAndamento(e.target.checked)}
-                    />{' '}
+                    />
                     Em andamento
                   </label>
                 </div>
@@ -202,10 +205,10 @@ export function FilterComponent() {
                 />
               </CampoFiltro>
 
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'end' }}>
-                <BotaoFiltro>🔍 Filtro</BotaoFiltro>
+              <ContainerBotoesFiltro>
+                <BotaoFiltro>🔍 Filtrar</BotaoFiltro>
                 <BotaoLimpar>Limpar</BotaoLimpar>
-              </div>
+              </ContainerBotoesFiltro>
             </LinhaFiltros>
 
             {/* Filtros Aplicados */}
@@ -243,24 +246,24 @@ export function FilterComponent() {
 
               {ocorrencias.map((ocorrencia) => (
                 <LinhaTabela key={ocorrencia.id}>
-                  <CelulaTabela>
+                  <CelulaTabela data-label="">
                     <input type="checkbox" />
                   </CelulaTabela>
-                  <CelulaTabela>{ocorrencia.id}</CelulaTabela>
-                  <CelulaTabela>
+                  <CelulaTabela data-label="ID">{ocorrencia.id}</CelulaTabela>
+                  <CelulaTabela data-label="Data/Hora">
                     {ocorrencia.data}<br />
                     <small>{ocorrencia.hora}</small>
                   </CelulaTabela>
-                  <CelulaTabela>{ocorrencia.tipo}</CelulaTabela>
-                  <CelulaTabela>{ocorrencia.localizacao}</CelulaTabela>
-                  <CelulaTabela>{ocorrencia.viatura}</CelulaTabela>
-                  <CelulaTabela>
+                  <CelulaTabela data-label="Tipo">{ocorrencia.tipo}</CelulaTabela>
+                  <CelulaTabela data-label="Localização">{ocorrencia.localizacao}</CelulaTabela>
+                  <CelulaTabela data-label="Viatura">{ocorrencia.viatura}</CelulaTabela>
+                  <CelulaTabela data-label="Status">
                     <StatusBadge color={getStatusColor(ocorrencia.status)}>
                       {ocorrencia.status}
                     </StatusBadge>
                   </CelulaTabela>
-                  <CelulaTabela>{ocorrencia.responsavel}</CelulaTabela>
-                  <CelulaTabela>👁️ 👤 ℹ️</CelulaTabela>
+                  <CelulaTabela data-label="Responsável">{ocorrencia.responsavel}</CelulaTabela>
+                  <CelulaTabela data-label="Ações">👁️ 👤 ℹ️</CelulaTabela>
                 </LinhaTabela>
               ))}
             </TabelaOcorrencias>
@@ -279,41 +282,43 @@ export function FilterComponent() {
               </BotoesPaginacao>
             </PaginacaoContainer>
           </SecaoResultados>
-        </div>
+        </AreaPrincipal>
 
         {/* Painel Lateral */}
         <PainelLateral>
           <TituloSecao>Filtros Salvos</TituloSecao>
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ padding: '12px', border: '1px solid #E5E7EB', borderRadius: '8px', marginBottom: '8px' }}>
-              <div style={{ fontWeight: '600' }}>Ocorrências Pendentes</div>
-              <div style={{ fontSize: '12px', color: '#6B7280' }}>Status: Pendente</div>
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ padding: '8px', border: '1px solid #E5E7EB', borderRadius: '6px', marginBottom: '6px' }}>
+              <div style={{ fontWeight: '600', fontSize: '14px' }}>Ocorrências Pendentes</div>
+              <div style={{ fontSize: '11px', color: '#6B7280' }}>Status: Pendente</div>
             </div>
-            <div style={{ padding: '12px', border: '1px solid #E5E7EB', borderRadius: '8px', marginBottom: '8px' }}>
-              <div style={{ fontWeight: '600' }}>Incêndios - Semanal</div>
-              <div style={{ fontSize: '12px', color: '#6B7280' }}>Tipo: Incêndio, 7 dias</div>
+            <div style={{ padding: '8px', border: '1px solid #E5E7EB', borderRadius: '6px', marginBottom: '6px' }}>
+              <div style={{ fontWeight: '600', fontSize: '14px' }}>Incêndios - Semanal</div>
+              <div style={{ fontSize: '11px', color: '#6B7280' }}>Tipo: Incêndio, 7 dias</div>
             </div>
-            <div style={{ padding: '12px', border: '1px solid #E5E7EB', borderRadius: '8px', marginBottom: '8px' }}>
-              <div style={{ fontWeight: '600' }}>Minha Região</div>
-              <div style={{ fontSize: '12px', color: '#6B7280' }}>Recife + 1º Batalhão</div>
+            <div style={{ padding: '8px', border: '1px solid #E5E7EB', borderRadius: '6px', marginBottom: '6px' }}>
+              <div style={{ fontWeight: '600', fontSize: '14px' }}>Minha Região</div>
+              <div style={{ fontSize: '11px', color: '#6B7280' }}>Recife + 1º Batalhão</div>
             </div>
           </div>
 
           <button style={{ 
             width: '100%', 
-            padding: '12px', 
+            padding: '8px', 
             border: '2px solid #EF4444', 
             background: 'white', 
             color: '#EF4444',
-            borderRadius: '8px',
+            borderRadius: '6px',
             fontWeight: '600',
-            marginBottom: '24px'
+            fontSize: '14px',
+            marginBottom: '16px',
+            cursor: 'pointer'
           }}>
             + Salvar Filtro Atual
           </button>
 
           <TituloSecao>Estatísticas Rápidas</TituloSecao>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <CardEstatistica>
               <NumeroEstatistica>247</NumeroEstatistica>
               <LabelEstatistica>Total de Ocorrências</LabelEstatistica>
@@ -332,7 +337,7 @@ export function FilterComponent() {
             </CardEstatistica>
           </div>
         </PainelLateral>
-      </div>
+      </LayoutResponsivo>
     </ContainerPrincipal>
   );
 }
