@@ -1,4 +1,4 @@
-export function Usuarios() {
+export function ListarUsuarios() {
   return (
     <div>
       <h1>Página de Usuários</h1>
