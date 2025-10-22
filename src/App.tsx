@@ -12,8 +12,7 @@ import { NovoUsuario } from "./pages/usuarios/CadastrarUsuario";
 import { GestaoUsuarios } from "./pages/usuarios/GestaoUsuarios";
 import { EditarUsuario } from "./pages/usuarios/EditarUsuario";
 import { RelatorioRapido } from "./pages/relatorios/RelatorioRapido";
-import { Estatisticas } from "./pages/dashboard/Estatisticas";
-import { VisaoGeral } from "./pages/dashboard/VisaoGeral";
+
 
 function App() {
   return (
@@ -22,9 +21,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login/>}/>
         <Route path="/dashboard" element={<> <Header/> <Dashboard/> </>}/>
-        <Route path="/dashboard/stats" element={<> <Header/> <Estatisticas/> </>}/>
-        <Route path="/dashboard/overview" element={<> <Header/> <VisaoGeral/> </>}/>
-        <Route path="/ocorrencias" element={<> <Header/> <Ocorrencias/> </>}/>
+        <Route path="/listaocorrencias" element={<> <Header/> <Ocorrencias/> </>}/>
         <Route path="/relatorios" element={<> <Header/> <Relatorios/> </>}/>
         <Route path="/relatorios/rapido" element={<> <Header/> <RelatorioRapido/> </>}/>
         <Route path="/auditoria" element={<> <Header/> <Auditoria/> </>}/>
