@@ -6,10 +6,15 @@ export const PageTopHeader = styled.header`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+
+  @media (max-width: 420px) {
+    margin-top: 3.5rem;
+    padding: 0 0.75rem;
+  }
 `;
 
 export const PageTitle = styled.h1`
-  font-size: 1.6rem;
+  font-size: clamp(1.25rem, 2.2vw, 1.6rem);
   margin: 0;
   color: #0b1220;
 `;
@@ -20,7 +25,7 @@ export const PageSubtitle = styled.p`
 `;
 
 export const RequiredNotice = styled.p`
-  font-size: 0. ninerem;
+  font-size: 0.9rem;
   color: #334155;
   margin: 0.35rem 0 0;
   span {
@@ -34,6 +39,8 @@ export const ContainerPainel = styled.div`
   margin: 0 auto;
   color: #1e293b;
   width: 100%;
+  max-width: 1200px;
+  padding: 0 1rem;
 `;
 
 export const BoxInfo = styled.section`
@@ -62,19 +69,21 @@ export const SectionTitle = styled.h2`
 
 export const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+
   @media (min-width: 1280px) {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
   }
 `;
 
 export const MiniGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
   @media (min-width: 1280px) {
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   }
 `;
 
@@ -83,8 +92,10 @@ interface GridColumnProps {
 }
 
 export const GridColumn = styled.div<GridColumnProps>`
+  /* permitir que seja usado dentro de Grid ou em row responsiva */
+  display: block;
+  width: 100%;
   flex: ${(props) => props.weight || 1};
-  
 `;
 
 export const ResponsiveRow = styled.div`
@@ -138,31 +149,27 @@ export const FullField = styled(Field)`
   grid-column: 1 / -1;
 `;
 
-export const MapBox = styled.div`
+
+export const MapFullBox = styled.div`
   background-color: #f1f5f9;
   border: 1px dashed #cbd5e1;
-  min-height: 90px;
+  min-height: 180px;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 0;
+  height: auto;
+  padding: 1rem;
+
+  @media (max-width: 520px) {
+    min-height: 140px;
+    padding: 0.75rem;
+  }
 `;
 
-export const MapFullBox = styled(MapBox)`
-  height: 100%;
-  padding: 0;
-`;
-
-export const MapPlaceholder = styled(MapBox)`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 14px;
-  color: #64748b;
-  height: 100%;
-  width: 100%;
+export const MapPlaceholder = styled.div`
 `;
 
 /* Small, reusable message inside map area (loading / not found) */
@@ -239,7 +246,7 @@ export const TeamResults = styled.div`
   z-index: 999;
   border: 1px solid #ddd;
   border-radius: 6px;
-  max-height: 6rem;
+  max-height: 200px;
   overflow-y: auto;
   background: #fff;
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
@@ -257,7 +264,8 @@ export const TeamResults = styled.div`
 export const TeamBox = styled.div`
   width: 100%;
   box-sizing: border-box;
-  height: 70px;
+  min-height: 70px;
+  max-height: 180px;
   overflow-y: auto;
 
   border: 1px solid #e6eef8;
@@ -314,30 +322,18 @@ export const UploadArea = styled.div`
   text-align: center;
   background: #f8fafc;
   cursor: pointer;
+
   input {
     margin-top: 1rem;
+    width: auto;
   }
-`;
 
-export const MapRow = styled.div`
-  display: flex;
-  gap: 1.5rem;
-  flex-wrap: nowrap;
-  align-items: stretch; /* faz os filhos terem a mesma altura */
-
-  /* garantir que o campo do mapa ocupe o espaço restante */
-  > div {
-    flex: 1 1 0;
-    min-width: 0;
+  @media (max-width: 420px) {
+    padding: 1rem;
+    input {
+      width: 100%;
+    }
   }
-`;
-
-/* Coords column — largura fixa (um field "normal") */
-export const CoordsColumn = styled.div`
-  flex: 0 0 260px; /* largura fixa para latitude/longitude */
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
 `;
 
 /* Adicionado: Toggle switch simples (estilo liga/desliga) */
@@ -567,6 +563,137 @@ export const FilterChip = styled.div`
     font-size: 1rem;
     &:hover {
       color: #000;
+    }
+  }
+`;
+
+export const PreviewList = styled.div`
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+
+  div {
+    background: #f8f8f8;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    margin-bottom: 0.25rem;
+  }
+`;
+
+export const Divider = styled.hr`
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 1.25rem 0;
+`;
+
+export const SectionSubtitle = styled.h4`
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #444;
+`;
+
+export const SignatureBox = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f9f9f9;
+  border: 2px dashed #ccc;
+  border-radius: 10px;
+  padding: 1rem;
+
+  canvas {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    touch-action: none;
+  }
+
+  @media (max-width: 420px) {
+    padding: 1rem;
+    input {
+      width: 100%;
+    }
+  }
+`;
+
+export const SignatureActions = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+`;
+
+export const UploadButtons = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  justify-content: center;
+
+  button {
+    min-width: 150px;
+  }
+`;
+
+export const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+`;
+
+export const ModalContent = styled.div`
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem;
+  max-width: 95%;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+`;
+
+export const StatusAlert = styled.div<{ isOnline: boolean }>`
+  background: ${(p) => (p.isOnline ? "#ecfdf5" : "#fef2f2")};
+  border: 1px solid ${(p) => (p.isOnline ? "#86efac" : "#fecaca")};
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  color: ${(p) => (p.isOnline ? "#065f46" : "#7f1d1d")};
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  font-size: 0.95rem;
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: ${(p) => (p.isOnline ? "#16a34a" : "#dc2626")};
+    }
+
+    strong {
+      font-weight: 600;
+    }
+  }
+
+  .message {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    line-height: 1.4;
+
+    svg {
+      flex-shrink: 0;
+      margin-top: 2px;
     }
   }
 `;
