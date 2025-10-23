@@ -1029,7 +1029,7 @@ export function NovaOcorrencia() {
         <GridColumn weight={1}>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
             <Button
-              text="Cancelar"
+              text="Limpar"
               type="button"
               variant="secondary"
               onClick={() => {
