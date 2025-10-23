@@ -145,7 +145,7 @@ export const RememberMeForgotPassword = styled.div`
   justify-content: space-between;
   align-items: center;
   width: 100%;
-
+  padding-bottom: 2rem;
   @media (max-width: 480px) {
     flex-direction: column;
     align-items: flex-start;

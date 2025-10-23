@@ -40,7 +40,7 @@ export const ContainerPainel = styled.div`
   color: #1e293b;
   width: 100%;
   max-width: 1200px;
-  padding: 0 1rem;
+  padding-top: 1rem;
 `;
 
 export const BoxInfo = styled.section`

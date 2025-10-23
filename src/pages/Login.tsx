@@ -20,15 +20,21 @@ import {
 import logoImg from "../assets/logo.svg";
 import userIcon from "../assets/clipboard.svg";
 import lockIcon from "../assets/lock.svg";
+import { useNavigate } from "react-router-dom";
 
 export function Login() {
   const auth = useContext(AuthContext);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   if (!auth) return null;
 
-  const handleLogin = () => auth.login(username, password);
+// const handleLogin = () => auth.login(username, password);
+
+  const handleLogin = () => {
+    navigate("/dashboard");
+  };
 
   return (
     <Background>
@@ -77,8 +83,8 @@ export function Login() {
             </RememberMeForgotPassword>
 
             <Button onClick={handleLogin}>Entrar</Button>
-        </Wrapper>
-      </DivLogin>
-    </Background>
-  );
-}
+         </Wrapper>
+       </DivLogin>
+     </Background>
+   );
+ }
