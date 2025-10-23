@@ -21,6 +21,13 @@ import { PerfilCard } from "../../components/NewUserPerfilCard/NewUserPerfilCard
 import { Button } from "../../components/Button";
 import axios from "axios";
 
+const PERFIS_DISPONIVEIS = [
+  { id: 1, nome: "Administrador", descricao: "Acesso total (gestão de usuários, logs, relatórios, dashboards)", color: "#dc2625" },
+  { id: 2, nome: "Gestor de Ocorrências", descricao: "Acesso para gestão de ocorrências e relatórios", color: "#f59e0b" },
+  { id: 3, nome: "Analista Estatístico", descricao: "Acesso para visualização de relatórios e estatísticas", color: "#3b82f6" },
+  { id: 4, nome: "Operador de Campo", descricao: "Acesso para registro de ocorrências no campo", color: "#10b981" },
+];
+
 export function NovoUsuario() {
   const navigate = useNavigate();
   const [nome, setNome] = useState("");
@@ -68,12 +75,7 @@ export function NovoUsuario() {
   
   e.preventDefault();
 
-  const perfilIdMap: Record<string, number> = {
-    "Administrador": 1,
-    "Gestor de Ocorrências": 2,
-    "Analista Estatístico": 3,
-    "Operador de Campo": 4,
-  };
+  const selectedPerfil = PERFIS_DISPONIVEIS.find((p) => p.nome === perfil);
 
   const newUser = {
     nome,
@@ -82,7 +84,7 @@ export function NovoUsuario() {
     email,
     senha: "123456", 
     unidadeOperacional: { id: 1 }, 
-    perfil: { id: perfilIdMap[perfil] || 1 }, 
+    perfil: { id: selectedPerfil ?.id }, 
   };
 
   try {
@@ -217,34 +219,16 @@ export function NovoUsuario() {
                   gap: "1rem",
                 }}
               >
-                <PerfilCard
-                  titulo="Administrador"
-                  descricao="Acesso total (gestão de usuários, logs, relatórios, dashboards)"
-                  ativo={perfil === "Administrador"}
-                  color="#dc2625"
-                  onClick={() => setPerfil("Administrador")}
-                />
-                <PerfilCard
-                  titulo="Gestor de Ocorrências"
-                  descricao="Pode criar e editar ocorrências, gerar relatórios operacionais"
-                  ativo={perfil === "Gestor de Ocorrências"}
-                  color="#f97316"
-                  onClick={() => setPerfil("Gestor de Ocorrências")}
-                />
-                <PerfilCard
-                  titulo="Analista Estatístico"
-                  descricao="Acesso a dashboards e exportações, sem poder de edição"
-                  ativo={perfil === "Analista Estatístico"}
-                  color="#2563eb"
-                  onClick={() => setPerfil("Analista Estatístico")}
-                />
-                <PerfilCard
-                  titulo="Operador de Campo"
-                  descricao="Usado no app mobile; aqui apenas leitura no painel"
-                  ativo={perfil === "Operador de Campo"}
-                  color="#16a34a"
-                  onClick={() => setPerfil("Operador de Campo")}
-                />
+            {PERFIS_DISPONIVEIS.map((p) => (
+              <PerfilCard
+                key={p.id}
+                titulo={p.nome}
+                descricao={p.descricao}
+                ativo={perfil === p.nome}
+                color={p.color}
+                onClick={() => setPerfil(p.nome)}
+              />
+            ))}
               </div>
             </BoxInfo>
 
