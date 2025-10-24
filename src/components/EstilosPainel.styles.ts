@@ -68,7 +68,6 @@ export const BoxInfo = styled.section`
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 2rem;
-  margin-bottom: 2.5rem;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
 `;
 
@@ -122,6 +121,7 @@ export const ResponsiveRow = styled.div`
   display: flex;
   gap: 1.5rem;
   flex-wrap: wrap;
+  margin-bottom: 2.5rem;
 
   @media (max-width: 900px) {
     flex-direction: column;
@@ -749,3 +749,29 @@ export const StatusAlert = styled.div<{ isOnline: boolean }>`
     }
   }
 `;
+
+export const SavedFilterCard = styled.div`
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background-color: #f9fafb;
+  }
+
+  .filter-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #111827;
+  }
+
+  .filter-description {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 2px;
+  }
+`;
+
