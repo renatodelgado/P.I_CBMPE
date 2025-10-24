@@ -3,7 +3,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { Login } from "./pages/Login";
 import {Dashboard} from "./pages/Dashboard";
 import {Auditoria} from "./pages/auditoria/Auditoria";
-import { Ocorrencias } from "./pages/pageListaOcorrencia/ListaOcorrencias";
+import { ListaOcorrencias } from "./pages/ocorrencias/ListaOcorrencias";
 import { Relatorios } from "./pages/Relatorios";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Header } from "./components/Header/Header";
@@ -21,7 +21,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login/>}/>
         <Route path="/dashboard" element={<> <Header/> <Dashboard/> </>}/>
-        <Route path="/listaocorrencias" element={<> <Header/> <Ocorrencias/> </>}/>
+        <Route path="/ocorrencias" element={<> <Header/> <ListaOcorrencias/> </>}/>
         <Route path="/relatorios" element={<> <Header/> <Relatorios/> </>}/>
         <Route path="/relatorios/rapido" element={<> <Header/> <RelatorioRapido/> </>}/>
         <Route path="/auditoria" element={<> <Header/> <Auditoria/> </>}/>
