@@ -13,7 +13,7 @@ import {
   AuditDetailsBox,
   AuditFooterNotice,
   AuditStatCard,
-  AuditTable,
+  Table,
   Grid,
   Field,
   DateRange,
@@ -21,6 +21,7 @@ import {
   SectionTitle,
   FilterChip,
   FilterChipsContainer,
+  TableWrapper,
 } from "../../components/EstilosPainel.styles";
 import { logs } from "../../assets/logs";
 import { formatDate } from "../../utils/formatDate";
@@ -249,7 +250,8 @@ export function Auditoria() {
         <GridColumn weight={1}>
           <BoxInfo>
             <SectionTitle>Registros de Auditoria</SectionTitle>
-            <AuditTable>
+            <TableWrapper>
+            <Table>
               <thead>
                 <tr>
                   <th>Timestamp</th>
@@ -302,7 +304,8 @@ export function Auditoria() {
                   </Fragment>
                 ))}
               </tbody>
-            </AuditTable>
+            </Table>
+            </TableWrapper>
 
             {/* Paginação */}
             <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", marginTop: "1rem" }}>
