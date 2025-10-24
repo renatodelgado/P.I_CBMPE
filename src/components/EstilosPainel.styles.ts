@@ -13,15 +13,31 @@ export const PageTopHeader = styled.header`
   }
 `;
 
+
+export const PageTopHeaderRow = styled(PageTopHeader)`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  flex-direction: row;
+  justify-content: space-between;
+`;
+
+export const PageTopHeaderColumn = styled(PageTopHeaderRow)`
+margin-top:0;
+  flex-direction: column;
+`;
+
 export const PageTitle = styled.h1`
   font-size: clamp(1.25rem, 2.2vw, 1.6rem);
   margin: 0;
   color: #0b1220;
+  align-self: flex-start;
 `;
 
 export const PageSubtitle = styled.p`
   color: #64748b;
   margin-top: 0.35rem;
+  align-self: flex-start;
 `;
 
 export const RequiredNotice = styled.p`
@@ -41,6 +57,10 @@ export const ContainerPainel = styled.div`
   width: 100%;
   max-width: 1200px;
   padding-top: 1rem;
+
+  @media (max-width: 1200px) {
+    padding: 2rem 2rem;
+  }
 `;
 
 export const BoxInfo = styled.section`
@@ -401,9 +421,39 @@ export const AuditStatCard = styled.div`
   }
 `;
 
-export const AuditTable = styled.table`
+
+
+export const TableWrapper = styled.div`
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+
+  /* adiciona uma leve sombra e borda para destacar o scroll */
+  border: 1px solid #e2e8f0;
+  background: #fff;
+
+  /* estiliza scrollbar no mobile e desktop */
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 8px;
+  }
+
+  @media (max-width: 600px) {
+    /* ajuda a evitar colunas muito largas */
+    table {
+      font-size: 0.85rem;
+    }
+  }
+`;
+
+export const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
+  min-width: 600px; /* força scroll horizontal em telas pequenas */
 
   thead {
     background-color: #f8fafc;
@@ -417,6 +467,7 @@ export const AuditTable = styled.table`
     color: #475569;
     font-size: 0.9rem;
     text-transform: uppercase;
+    white-space: nowrap; /* evita quebra de título */
   }
 
   td {
@@ -431,6 +482,7 @@ export const AuditTable = styled.table`
     background-color: #f9fafb;
   }
 `;
+
 
 export const AuditDetailsBox = styled.div`
   background: #f8fafc;
