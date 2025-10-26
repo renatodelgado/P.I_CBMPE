@@ -1,18 +1,11 @@
 import styled from "styled-components";
 
 export const PageTopHeader = styled.header`
-  margin-top: 6rem;
   margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-
-  @media (max-width: 420px) {
-    margin-top: 3.5rem;
-    padding: 0 0.75rem;
-  }
 `;
-
 
 export const PageTopHeaderRow = styled(PageTopHeader)`
   display: flex;
@@ -54,12 +47,15 @@ export const RequiredNotice = styled.p`
 export const ContainerPainel = styled.div`
   margin: 0 auto;
   color: #1e293b;
-  width: 100%;
   max-width: 1200px;
-  padding-top: 1rem;
+  padding-top: 12vh;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-bottom: 1vh;
 
-  @media (max-width: 1200px) {
-    padding: 2rem 2rem;
+  @media (max-width: 768px) {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 `;
 
@@ -69,6 +65,11 @@ export const BoxInfo = styled.section`
   border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+`;
+
+export const SavedFiltersBoxInfo = styled(BoxInfo)`
+  max-height: 350px;
+  overflow-y: auto;
 `;
 
 export const SectionTitle = styled.h2`
@@ -421,7 +422,23 @@ export const AuditStatCard = styled.div`
   }
 `;
 
+export const StatIconWrapper = styled.div<{ bgColor: string; iconColor: string }>`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 
+  .icon-box {
+    background-color: ${(p) => p.bgColor};
+    color: ${(p) => p.iconColor};
+    border-radius: 6px;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+  }
+`;
 
 export const TableWrapper = styled.div`
   width: 100%;

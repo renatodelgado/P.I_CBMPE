@@ -202,9 +202,10 @@ export function NovoUsuario() {
                 </Field>
               </Grid>
             </BoxInfo>
-
-            
-
+            </GridColumn>
+            </ResponsiveRow>
+        <ResponsiveRow>
+          <GridColumn weight={1}>
             {/* PERMISSÕES E FUNÇÃO */}
             <BoxInfo>
               <SectionTitle>
@@ -232,6 +233,10 @@ export function NovoUsuario() {
               </div>
             </BoxInfo>
 
+            </GridColumn>
+            </ResponsiveRow>
+        <ResponsiveRow>
+          <GridColumn weight={1}>
             {/* VINCULAÇÃO HIERÁRQUICA */}
             <BoxInfo>
               <SectionTitle>
@@ -267,6 +272,10 @@ export function NovoUsuario() {
               </Grid>
             </BoxInfo>
 
+            </GridColumn>
+            </ResponsiveRow>
+        <ResponsiveRow>
+          <GridColumn weight={1}>
             {/* PERMISSÕES ESPECÍFICAS */}
             <BoxInfo>
               <SectionTitle>
@@ -292,6 +301,10 @@ export function NovoUsuario() {
               </div>
             </BoxInfo>
 
+            </GridColumn>
+            </ResponsiveRow>
+        <ResponsiveRow>
+          <GridColumn weight={1}>
             {/* BOTÕES */}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
               <Button

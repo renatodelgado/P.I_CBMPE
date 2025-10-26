@@ -418,7 +418,8 @@ export function GestaoUsuarios() {
                 <PageTopHeaderColumn>
                     <ActionsRow>
                         <Button
-                            text={<><PlusIcon size={16} style={{ marginRight: 8 }} />Adicionar Usuário</>}
+                            variant="danger"
+                            text={<><PlusIcon size={16} style={{ marginRight: 8 }} weight="bold" />Adicionar Usuário</>}
                             onClick={() => { handleLogin(); }}
                         />
                     </ActionsRow>
