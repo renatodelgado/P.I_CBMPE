@@ -542,6 +542,7 @@ export const UserCard = styled(BoxInfo)`
       font-size: 0.8rem;
       color: #334155;
       background: #f1f5f9;
+      max-width: fit-content;
     }
   }
 
