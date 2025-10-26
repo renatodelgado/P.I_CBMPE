@@ -9,6 +9,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Button } from "../../components/Button";
 import { useOnlineStatus } from "../../utils/useOnlineStatus";
+import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
 
 export function NovaOcorrencia() {
   const isOnline = useOnlineStatus();
@@ -68,8 +69,14 @@ export function NovaOcorrencia() {
     }
   }
 
+  type UploadedFile = {
+    file?: File;    // só existe se for arquivo local
+    url?: string;   // só existe se já foi enviado
+    name: string;   // nome do arquivo
+  };
+
   const [offlineOccurrences, setOfflineOccurrences] = useState<any[]>([]);
-  const [tipoOcorrencia, setTipoOcorrencia] = useState("Incêndio");
+  const [naturezaOcorrencia, setNaturezaOcorrencia] = useState("Incêndio");
   const [dataChamado, setDataChamado] = useState(getCurrentDateTime());
   const [statusInicial, setStatusInicial] = useState("Pendente");
   const [descricaoResumida, setDescricaoResumida] = useState("");
@@ -92,6 +99,7 @@ export function NovaOcorrencia() {
   const [numero, setNumero] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
+  const [formaAcionamento, setFormaAcionamento] = useState("Telefone");
   const [isLoadingOffline, setIsLoadingOffline] = useState(false);
   const [users] = useState<string[]>([
     "Cabo Silva",
@@ -107,7 +115,7 @@ export function NovaOcorrencia() {
   const [team, setTeam] = useState<string[]>([]);
   const [teamQuery, setTeamQuery] = useState("");
   const [pessoas, setPessoas] = useState<Pessoa[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureModalOpen, setSignatureModalOpen] = useState(false);
@@ -237,10 +245,34 @@ export function NovaOcorrencia() {
     setPessoas((prev) => (prev.length > 0 ? prev.filter((p) => p.id !== id) : prev));
   };
 
-  const handleFileUpload = (files: FileList | null) => {
+  const handleFileUpload = async (files: FileList | null) => {
     if (!files) return;
-    setUploadedFiles([...uploadedFiles, ...Array.from(files)]);
+
+    const newFiles: UploadedFile[] = Array.from(files).map((file) => ({
+      file,
+      name: file.name,
+    }));
+
+    setUploadedFiles((prev) => [...prev, ...newFiles]);
+
+    const uploadedUrls = await Promise.all(
+      newFiles.map(async (f) => {
+        const url = await uploadToCloudinary(f.file!);
+        return { ...f, url };
+      })
+    );
+
+    setUploadedFiles((prev) => {
+      // substitui os arquivos enviados com a URL
+      return prev.map((f) => {
+        const updated = uploadedUrls.find((u) => u.name === f.name);
+        return updated || f;
+      });
+    });
+
+    console.log("Arquivos enviados:", uploadedUrls);
   };
+
 
   const startDrawing = (e: any) => {
     const canvas = signatureCanvasRef.current;
@@ -290,12 +322,19 @@ export function NovaOcorrencia() {
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
   };
 
-  const saveSignature = () => {
+  const saveSignature = async () => {
     const canvas = signatureCanvasRef.current;
     if (!canvas) return;
+
     const dataURL = canvas.toDataURL("image/png");
-    console.log("Assinatura capturada em base64:", dataURL);
-    alert("Assinatura salva (base64 gerada no console).");
+    const blob = await (await fetch(dataURL)).blob();
+    const file = new File([blob], "assinatura.png", { type: "image/png" });
+
+    const url = await uploadToCloudinary(file);
+    console.log("URL da assinatura:", url);
+
+    alert("Assinatura enviada com sucesso!");
+    // Aqui você salva a URL no estado para enviar ao backend
   };
 
   const startModalDrawing = (e: any) => {
@@ -347,7 +386,7 @@ export function NovaOcorrencia() {
       setIsLoadingOffline(true);
 
       setDataChamado(last.dataChamado || getCurrentDateTime());
-      setTipoOcorrencia(last.tipoOcorrencia || "Incêndio");
+      setNaturezaOcorrencia(last.naturezaOcorrencia || "Incêndio");
       setStatusInicial(last.statusInicial || "Pendente");
       setDescricaoResumida(last.descricaoResumida || "");
       setUnidadeResponsavel(last.unidadeResponsavel || "");
@@ -384,8 +423,9 @@ export function NovaOcorrencia() {
       setPessoas(normalizedPessoas);
 
       const arquivoNomes = Array.isArray(last.arquivos) ? last.arquivos : [];
-      const files = arquivoNomes.map((name: string) => new File([new Uint8Array()], name));
+      const files = arquivoNomes.map((name: string) => ({ name, url: undefined }));
       setUploadedFiles(files);
+
 
       setTimeout(() => setIsLoadingOffline(false), 0);
     }
@@ -584,8 +624,8 @@ export function NovaOcorrencia() {
             <SectionTitle><FileTextIcon size={22} weight="fill" />Dados Principais</SectionTitle>
             <Grid>
               <Field>
-                <label className="required">Tipo de Ocorrência</label>
-                <select value={tipoOcorrencia} onChange={(e) => setTipoOcorrencia(e.target.value)}>
+                <label className="required">Natureza da Ocorrência</label>
+                <select value={naturezaOcorrencia} onChange={(e) => setNaturezaOcorrencia(e.target.value)}>
                   <option>Incêndio</option>
                   <option>Resgate</option>
                   <option>Atendimento Pré-Hospitalar</option>
@@ -606,6 +646,14 @@ export function NovaOcorrencia() {
                   <option>Pendente</option>
                   <option>Em andamento</option>
                   <option>Concluída</option>
+                </select>
+              </Field>
+              <Field>
+                <label className="required">Forma de acionamento</label>
+                <select value={formaAcionamento} onChange={(e) => setFormaAcionamento(e.target.value)}>
+                  <option>Telefone</option>
+                  <option>Aplicativo</option>
+                  <option>Pessoalmente</option>
                 </select>
               </Field>
               <FullField>
@@ -935,15 +983,21 @@ export function NovaOcorrencia() {
                 onChange={(e) => handleFileUpload(e.target.files)}
               />
             </UploadArea>
-            {uploadedFiles?.length > 0 && (
+            {uploadedFiles.length > 0 && (
               <PreviewList>
-                {uploadedFiles.map((file, idx) => (
+                {uploadedFiles.map((f, idx) => (
                   <div key={idx}>
-                    <span>{file.name}</span>
+                    <span>{f.name}</span>
+                    {f.url && (
+                      <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8 }}>
+                        Visualizar
+                      </a>
+                    )}
                   </div>
                 ))}
               </PreviewList>
             )}
+
             <Divider />
             <SectionSubtitle>Assinatura do Responsável</SectionSubtitle>
             <SignatureBox>
@@ -1051,7 +1105,7 @@ export function NovaOcorrencia() {
               variant="danger"
               onClick={() => {
                 const ocorrencia = {
-                  tipoOcorrencia,
+                  naturezaOcorrencia,
                   dataChamado,
                   statusInicial,
                   descricaoResumida,

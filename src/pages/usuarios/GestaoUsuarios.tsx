@@ -22,26 +22,7 @@ import { useNavigate } from "react-router-dom";
 
 export function GestaoUsuarios() {
     const [usuarios, setUsuarios] = useState<any[]>([]);
-const [loading, setLoading] = useState(true);
-
-useEffect(() => {
-  const fetchUsuarios = async () => {
-    try {
-      const response = await axios.get("https://backend-chama.up.railway.app/users");
-      setUsuarios(response.data); // como você mostrou, é um array direto
-    } catch (error: any) {
-      console.error("Erro ao carregar usuários:", error.message);
-      alert("Erro ao carregar usuários: " + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchUsuarios();
-}, []);
-
-
-
+    const [loading, setLoading] = useState(true);
 
     const [filters, setFilters] = useState({
         search: "",
@@ -68,8 +49,8 @@ useEffect(() => {
                     nome: u.nome,
                     email: u.email,
                     matricula: u.matricula,
-                    perfil: u.perfil.nome,
-                    unidade: u.unidadeOperacional.nome,
+                    perfil: u.perfil?.nome ?? "Sem perfil",
+                    unidade: u.unidadeOperacional?.nome ?? "Sem unidade",
                     status: u.status ? "Ativo" : "Inativo",
                     ultimoAcesso: u.ultimoAcesso ?? "-",
                     foto: u.foto ?? `https://i.pravatar.cc/50?img=${Math.floor(Math.random() * 70) + 1}`,
