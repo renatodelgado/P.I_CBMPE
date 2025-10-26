@@ -207,10 +207,21 @@ export function GestaoUsuarios() {
                                         <tr key={i}>
                                             <td style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                                                 <img src={u.foto} alt={u.nome} style={{ width: 40, height: 40, borderRadius: "50%" }} />
-                                                <div>
-                                                    <strong>{u.nome}</strong>
-                                                    <div style={{ fontSize: "0.85rem", color: "#64748b" }}>{u.email}</div>
-                                                    <div style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Mat: {u.matricula}</div>
+                                                <div style={{
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    minWidth: 0,
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    whiteSpace: "nowrap"
+                                                }}>
+                                                    <strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis" }}>{u.nome}</strong>
+                                                    <div style={{ fontSize: "0.85rem", color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                        {u.email}
+                                                    </div>
+                                                    <div style={{ fontSize: "0.8rem", color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                        Mat: {u.matricula}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td>{u.perfil}</td>
