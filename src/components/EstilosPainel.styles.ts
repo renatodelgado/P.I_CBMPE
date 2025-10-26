@@ -465,7 +465,93 @@ export const TableWrapper = styled.div`
       font-size: 0.85rem;
     }
   }
+
+  @media (max-width: 768px) {
+    display: none;
+  }
 `;
+
+export const UserCardWrapper = styled.div`
+  display: none;
+
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+`;
+
+export const UserCard = styled(BoxInfo)`
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  
+  .user-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+
+    img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+
+      strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 1rem;
+      }
+
+      .email,
+      .matricula {
+        font-size: 0.85rem;
+        color: #64748b;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+
+    .detail {
+      font-size: 0.85rem;
+      span {
+        font-weight: 600;
+        color: #334155;
+      }
+    }
+
+    .status {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 500;
+      font-size: 0.8rem;
+      color: #334155;
+      background: #f1f5f9;
+    }
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+`;
+
 
 export const Table = styled.table`
   width: 100%;

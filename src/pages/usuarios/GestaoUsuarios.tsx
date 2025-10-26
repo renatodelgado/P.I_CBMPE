@@ -15,6 +15,8 @@ import {
     PageTopHeaderRow,
     PageTopHeaderColumn,
     TableWrapper,
+    UserCard,
+    UserCardWrapper,
 } from "../../components/EstilosPainel.styles";
 import { PlusIcon, PencilIcon, TrashIcon, DotsThreeIcon } from "@phosphor-icons/react";
 import { Button } from "../../components/Button";
@@ -225,7 +227,10 @@ export function GestaoUsuarios() {
                                                 </div>
                                             </td>
                                             <td>{u.perfil}</td>
-                                            <td>{u.unidade}</td>
+                                            <td style={{ maxWidth: 120, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                {u.unidade}
+                                            </td>
+
                                             <td>
                                                 <span
                                                     style={{
@@ -259,6 +264,35 @@ export function GestaoUsuarios() {
                                 </tbody>
                             </Table>
                         </TableWrapper>
+
+                        <UserCardWrapper>
+                            {filteredUsuarios.map((u, i) => (
+                                <UserCard key={i}>
+                                    <div className="user-header">
+                                        <img src={u.foto} alt={u.nome} />
+                                        <div className="user-info">
+                                            <strong>{u.nome}</strong>
+                                            <div className="email">{u.email}</div>
+                                            <div className="matricula">Mat: {u.matricula}</div>
+                                        </div>
+                                    </div>
+                                    <div className="user-details">
+                                        <div className="detail"><span>Perfil:</span> {u.perfil}</div>
+                                        <div className="detail"><span>Unidade:</span> {u.unidade}</div>
+                                        <div className="detail status" style={{ background: getStatusColor(u.status), color: getStatusTextColor(u.status) }}>
+                                            {u.status}
+                                        </div>
+                                        <div className="detail"><span>Último Acesso:</span> {u.ultimoAcesso}</div>
+                                    </div>
+                                    <div className="actions">
+                                        <button><PencilIcon size={18} /></button>
+                                        <button><TrashIcon size={18} /></button>
+                                        <button><DotsThreeIcon size={20} weight="bold" /></button>
+                                    </div>
+                                </UserCard>
+                            ))}
+                        </UserCardWrapper>
+
 
                         {/* Paginação */}
                         <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", marginTop: "1rem" }}>
