@@ -88,7 +88,7 @@ export function NovoUsuario() {
   };
 
   try {
-    const response = await axios.post("http://localhost:3333/users", newUser);
+    const response = await axios.post("https://backend-chama.up.railway.app/users", newUser);
     console.log("✅ Usuário cadastrado com sucesso:", response.data);
     alert("Usuário cadastrado com sucesso!");
   } catch (error: unknown) {
