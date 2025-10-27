@@ -1278,13 +1278,14 @@ export function NovaOcorrencia() {
               variant="danger"
               onClick={async () => {
                 try {
-                  // 1) enviar assinatura (se houver)
+                  // 1) enviar assinatura (se houver) com nome contendo o número da ocorrência
                   let assinaturaUrl: string | undefined = undefined;
                   if (signatureCanvasRef.current) {
                     const canvas = signatureCanvasRef.current;
                     const dataURL = canvas.toDataURL("image/png");
                     const blob = await (await fetch(dataURL)).blob();
-                    const file = new File([blob], "assinatura.png", { type: "image/png" });
+                    const assinaturaFileName = `assinatura${numeroOcorrencia}.png`;
+                    const file = new File([blob], assinaturaFileName, { type: "image/png" });
                     assinaturaUrl = await uploadToCloudinary(file);
                   }
 
@@ -1311,44 +1312,85 @@ export function NovaOcorrencia() {
                       };
                     });
 
+                  // incluir assinatura também como anexo (se foi enviada)
+                  if (assinaturaUrl) {
+                    anexos.push({
+                      tipoArquivo: "imagem",
+                      urlArquivo: assinaturaUrl,
+                      nomeArquivo: `assinatura${numeroOcorrencia}.png`,
+                      extensaoArquivo: "png",
+                      descricao: "Assinatura do responsável",
+                    });
+                  }
+
                   // 4) montar payload conforme exemplo desejado
+                  const mapStatus = (s: string) => {
+                    switch (s) {
+                      case "Pendente":
+                        return "pendente";
+                      case "Em andamento":
+                        return "em_andamento";
+                      case "Concluída":
+                        return "concluida";
+                      case "Não Atendido":
+                        return "nao_atendido";
+                      default:
+                        return String(s).toLowerCase().replace(/\s+/g, "_");
+                    }
+                  };
+
                   const payload = {
                     numeroOcorrencia: numeroOcorrencia,
-                    dataHoraChamada: new Date(dataChamado).toISOString(),
-                    statusAtendimento,
-                    motivoNaoAtendimento: statusAtendimento === "Não Atendido" ? motivoNaoAtendimento : null,
-                    descricao,
-                    formaAcionamento, // ajustar texto se necessário ("Telefone 193" etc.)
+                    dataHoraChamada: dataChamado ? new Date(dataChamado).toISOString() : new Date().toISOString(),
+                    statusAtendimento: mapStatus(statusAtendimento),
+                    // conforme solicitado sempre "N/A"
+                    motivoNaoAtendimento: "N/A",
+                    descricao: descricao || "",
+                    formaAcionamento: (formaAcionamento || "Telefone").toLowerCase(),
                     dataSincronizacao: new Date().toISOString(),
 
+                    // usuário fixo conforme solicitado
                     usuarioId: usuarioLogado.id,
-                    unidadeOperacionalId: unidade ? Number(unidade) : null,
-                    naturezaOcorrenciaId: natureza ? Number(natureza) : null,
-                    grupoOcorrenciaId: grupo ? Number(grupo) : null,
-                    subgrupoOcorrenciaId: subgrupo ? Number(subgrupo) : null,
-                    viaturaId: numeracaoViatura ? Number(numeracaoViatura) : null,
-                    eventoEspecialId: eventoEspecial ? /* colocar id do evento */ null : null,
+                    unidadeOperacionalId: unidade ? Number(unidade) : undefined,
+                    naturezaOcorrenciaId: natureza ? Number(natureza) : undefined,
+                    grupoOcorrenciaId: grupo ? Number(grupo) : undefined,
+                    subgrupoOcorrenciaId: subgrupo ? Number(subgrupo) : undefined,
+                    viaturaId: numeracaoViatura ? Number(numeracaoViatura) : undefined,
+                    eventoEspecialId: eventoEspecial ? 1 : undefined,
 
                     localizacao: {
-                      logradouro,
-                      numero,
-                      bairro,
-                      cidade: selectedMunicipioNome,
-                      estado: "PE",
-                      cep: "", // preencher se disponível
-                      latitude: latitude ? Number(latitude) : null,
-                      longitude: longitude ? Number(longitude) : null,
+                      municipio: selectedMunicipioNome || "",
+                      bairro: bairro || "",
+                      logradouro: logradouro || "",
+                      numero: numero || "",
+                      complemento: complemento || "",
+                      pontoReferencia: referencia || "",
+                      latitude: latitude ? Number(latitude) : undefined,
+                      longitude: longitude ? Number(longitude) : undefined,
                     },
 
-                    anexos,
-                    assinatura: assinaturaUrl,
-                    tempoResposta,
-                    observacoes: observacoesAdicionais,
+                    anexos: Array.isArray(anexos)
+                      ? anexos.map((u: any) => ({
+                          tipoArquivo: u.tipoArquivo,
+                          urlArquivo: u.urlArquivo,
+                          nomeArquivo: u.nomeArquivo,
+                          extensaoArquivo: u.extensaoArquivo,
+                          descricao: u.descricao || "",
+                        }))
+                      : [],
+
+                    // campos auxiliares/optativos
+                    assinatura: assinaturaUrl || undefined,
+                    tempoResposta: tempoResposta || undefined,
+                    observacoes: observacoesAdicionais || undefined,
                   };
+
 
                   // 5) salvar localmente (fila offline) — opcional manter
                   const saved = saveOffline(payload);
                   setOfflineOccurrences(getOfflineOccurrences());
+
+                  console.log(payload)
 
                   // 6) se online, enviar para backend e remover da fila
                   if (isOnline) {
