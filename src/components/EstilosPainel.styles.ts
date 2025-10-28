@@ -763,6 +763,10 @@ export const SignatureBox = styled.div`
     border: 1px solid #ccc;
     border-radius: 6px;
     touch-action: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
 
   @media (max-width: 420px) {
@@ -810,6 +814,21 @@ export const ModalContent = styled.div`
   padding: 1rem;
   max-width: 95%;
   box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+
+  /* novo: evitar que o modal seja maior que a viewport e permitir scroll interno */
+  max-width: 900px;
+  width: 95%;
+  box-sizing: border-box;
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+
+  /* garantir que o canvas dentro do modal não dispare scroll/gestos do navegador */
+  canvas {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
 `;
 
 export const StatusAlert = styled.div<{ isOnline: boolean }>`
