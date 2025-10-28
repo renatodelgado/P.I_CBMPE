@@ -36,12 +36,9 @@ export function Login() {
       return;
     }
 
-    try {
-      await auth.login(matricula, senha);
+    const success = await auth.login(matricula, senha);
+    if (success) {
       navigate("/dashboard");
-    } catch (error) {
-      console.error("Erro no login:", error);
-      alert("Usuário ou senha inválidos.");
     }
   };
 

@@ -13,7 +13,7 @@ type User = {
 
 type AuthContextType = {
   user: User | null;
-  login: (matricula: string, senha: string) => Promise<void>;
+  login: (matricula: string, senha: string) => Promise<boolean>;
   logout: () => void;
 };
 
@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 
   // 🔹 Função de login
-  const login = async (matricula: string, senha: string) => {
+  const login = async (matricula: string, senha: string): Promise<boolean> => {
     try {
       const response = await api.post("/auth/login", { matricula, senha });
       const { user, token } = response.data;
@@ -31,9 +31,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem("token", token);
       setUser(user);
       console.log("✅ Login bem-sucedido:", user);
+      return true; // sucesso
     } catch (error: any) {
       console.error("❌ Erro ao fazer login:", error.response?.data || error.message);
       alert("Usuário ou senha inválidos.");
+      return false; // falha
     }
   };
 
@@ -47,8 +49,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      // Opcional: poderia validar o token no backend
       console.log("🔐 Usuário ainda autenticado (token encontrado).");
+      // aqui você pode fazer uma requisição ao backend para validar o token
     }
   }, []);
 
