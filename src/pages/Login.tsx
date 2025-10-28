@@ -24,16 +24,25 @@ import { useNavigate } from "react-router-dom";
 
 export function Login() {
   const auth = useContext(AuthContext);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [matricula, setMatricula] = useState("");
+  const [senha, setSenha] = useState("");
   const navigate = useNavigate();
 
   if (!auth) return null;
 
-// const handleLogin = () => auth.login(username, password);
+  const handleLogin = async () => {
+    if (!matricula || !senha) {
+      alert("Por favor, preencha todos os campos!");
+      return;
+    }
 
-  const handleLogin = () => {
-    navigate("/dashboard");
+    try {
+      await auth.login(matricula, senha);
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Erro no login:", error);
+      alert("Usuário ou senha inválidos.");
+    }
   };
 
   return (
@@ -46,45 +55,45 @@ export function Login() {
             <h2>Sistema de Gestão de Ocorrências CBMPE</h2>
           </Header>
 
-            <ContainerContent>
-              <Label>Matrícula</Label>
-              <InputWrapper>
-                <InputIcon src={userIcon} alt="Ícone de usuário" />
-                <Input
-                  type="text"
-                  placeholder="Digite sua matrícula"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </InputWrapper>
+          <ContainerContent>
+            <Label>Matrícula</Label>
+            <InputWrapper>
+              <InputIcon src={userIcon} alt="Ícone de usuário" />
+              <Input
+                type="text"
+                placeholder="Digite sua matrícula"
+                value={matricula}
+                onChange={(e) => setMatricula(e.target.value)}
+              />
+            </InputWrapper>
 
-              <Label>Senha</Label>
-              <InputWrapper>
-                <InputIcon src={lockIcon} alt="Ícone de cadeado" />
-                <Input
-                  type="password"
-                  placeholder="Digite sua senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </InputWrapper>
-            </ContainerContent>
+            <Label>Senha</Label>
+            <InputWrapper>
+              <InputIcon src={lockIcon} alt="Ícone de cadeado" />
+              <Input
+                type="password"
+                placeholder="Digite sua senha"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+              />
+            </InputWrapper>
+          </ContainerContent>
 
-            <RememberMeForgotPassword>
-              <RememberMe>
-                <Checkbox />
-                <p>Lembrar de mim</p>
-              </RememberMe>
-              <ForgotPassword>
-                <p style={{ marginLeft: "auto" }}>
-                  <a href="#">Esqueci minha senha</a>
-                </p>
-              </ForgotPassword>
-            </RememberMeForgotPassword>
+          <RememberMeForgotPassword>
+            <RememberMe>
+              <Checkbox />
+              <p>Lembrar de mim</p>
+            </RememberMe>
+            <ForgotPassword>
+              <p style={{ marginLeft: "auto" }}>
+                <a href="#">Esqueci minha senha</a>
+              </p>
+            </ForgotPassword>
+          </RememberMeForgotPassword>
 
-            <Button onClick={handleLogin}>Entrar</Button>
-         </Wrapper>
-       </DivLogin>
-     </Background>
-   );
- }
+          <Button onClick={handleLogin}>Entrar</Button>
+        </Wrapper>
+      </DivLogin>
+    </Background>
+  );
+}
