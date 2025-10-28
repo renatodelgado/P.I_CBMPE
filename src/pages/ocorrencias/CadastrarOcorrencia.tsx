@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { FileTextIcon, FireTruckIcon, GearIcon, MapPinIcon, PaperclipIcon, UserIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { BoxInfo, SectionTitle, Grid, Field, FullField, ContainerPainel, GridColumn, ResponsiveRow, PageSubtitle, PageTitle, PageTopHeader, RequiredNotice, /* TeamSearchWrapper, TeamSearchInput, TeamResults, TeamBox, TeamChip, */ MapFullBox, MapPlaceholder, PersonCard, PersonCardHeader, PersonRemoveButton, UploadArea, Divider, PreviewList, SectionSubtitle, SignatureActions, SignatureBox, ModalContent, ModalOverlay, StatusAlert } from "../../components/EstilosPainel.styles";
@@ -173,6 +172,9 @@ export function NovaOcorrencia() {
   const [assinaturaUrl, setAssinaturaUrl] = useState<string | undefined>(undefined);
   // armazena a assinatura localmente (dataURL) até o envio final ao salvar a ocorrência
   const [assinaturaDataUrl, setAssinaturaDataUrl] = useState<string | undefined>(undefined);
+  
+  console.log(assinaturaUrl, assinaturaDataUrl);
+
   const [eventoEspecial, setEventoEspecial] = useState(false);
 
   const [usuarioLogado] = useState({
