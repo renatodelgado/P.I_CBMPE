@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+<<<<<<< HEAD
 import { FileTextIcon, FireTruckIcon, GearIcon, MapPinIcon, PaperclipIcon, UserIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { BoxInfo, SectionTitle, Grid, Field, FullField, ContainerPainel, GridColumn, ResponsiveRow, PageSubtitle, PageTitle, PageTopHeader, RequiredNotice, /* TeamSearchWrapper, TeamSearchInput, TeamResults, TeamBox, TeamChip, */ MapFullBox, MapPlaceholder, PersonCard, PersonCardHeader, PersonRemoveButton, UploadArea, Divider, PreviewList, SectionSubtitle, SignatureActions, SignatureBox, ModalContent, ModalOverlay, StatusAlert } from "../../components/EstilosPainel.styles";
+=======
+import { ClipboardTextIcon, FileTextIcon, FireTruckIcon, GearIcon, MapPinIcon, PaperclipIcon, UserIcon, WarningCircleIcon } from "@phosphor-icons/react";
+import { BoxInfo, SectionTitle, Grid, Field, FullField, ContainerPainel, GridColumn, ResponsiveRow, PageSubtitle, PageTitle, PageTopHeader, RequiredNotice, TeamSearchWrapper, TeamSearchInput, TeamResults, TeamBox, TeamChip, MapFullBox, MapPlaceholder, PersonCard, PersonCardHeader, PersonRemoveButton, UploadArea, Divider, PreviewList, SectionSubtitle, SignatureActions, SignatureBox, ModalContent, ModalOverlay, StatusAlert } from "../../components/EstilosPainel.styles";
+>>>>>>> parent of 619a74e (Merge pull request #8 from renatodelgado/main)
 import { Breadcrumb } from "../../components/Breadcrumb";
 import { useEffect, useRef, useState } from "react";
 import { fetchBairrosFromOSM, fetchMunicipiosPE, type Municipio } from "../../services/municipio_bairro";
@@ -10,9 +15,12 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Button } from "../../components/Button";
 import { useOnlineStatus } from "../../utils/useOnlineStatus";
+<<<<<<< HEAD
 import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
 import axios from "axios";
 import { formatCPF } from "../../utils/formatCPF";
+=======
+>>>>>>> parent of 619a74e (Merge pull request #8 from renatodelgado/main)
 
 export function NovaOcorrencia() {
   const isOnline = useOnlineStatus();
@@ -27,10 +35,7 @@ export function NovaOcorrencia() {
   };
 
   function saveOffline(ocorrencia: any) {
-    // gerar um id único para poder identificar/remover depois
-    const id = Date.now() + Math.floor(Math.random() * 1000);
     const timestamped = {
-      id,
       ...ocorrencia,
       savedAt: new Date().toISOString(),
     };
@@ -75,6 +80,7 @@ export function NovaOcorrencia() {
     }
   }
 
+<<<<<<< HEAD
   type UploadedFile = {
     file?: File;    // só existe se for arquivo local
     url?: string;   // só existe se já foi enviado
@@ -96,43 +102,17 @@ export function NovaOcorrencia() {
   >([]);
   
   const [loadingCondicaoVitima, setLoadingCondicaoVitima] = useState<boolean>(true);
+=======
+  const [offlineOccurrences, setOfflineOccurrences] = useState<any[]>([]);
+  const [tipoOcorrencia, setTipoOcorrencia] = useState("Incêndio");
+>>>>>>> parent of 619a74e (Merge pull request #8 from renatodelgado/main)
   const [dataChamado, setDataChamado] = useState(getCurrentDateTime());
-
-  const [statusAtendimento, setStatusAtendimento] = useState("Pendente");
-  const [motivoNaoAtendimento, setMotivoNaoAtendimento] = useState("");
-
-  const [descricao, setDescricao] = useState("");
-
-  const [unidadesOperacionais, setUnidadesOperacionais] = useState<
-    { id: number; nome: string; sigla: string; pontoBase: string }[]
-  >([]);
-  const [unidade, setUnidade] = useState("");
-  const [loadingUnidades, setLoadingUnidades] = useState<boolean>(true);
-
-  const [gruposOcorrencias, setGruposOcorrencias] = useState<
-    {
-      naturezaOcorrencia: any; id: number; nome: string;
-    }[]
-  >([]);
-
-  const [loadingGrupos, setLoadingGrupos] = useState<boolean>(true);
-  const [grupo, setGrupo] = useState("");
-
-
-  const [subgruposOcorrencias, setSubgruposOcorrencias] = useState<
-    {
-      grupoOcorrencia: any; id: number; nome: string;
-    }[]
-  >([]);
-  const [loadingSubgrupos, setLoadingSubgrupos] = useState<boolean>(true);
-  const [subgrupo, setSubgrupo] = useState("");
-
-  const [numeroOcorrencia, setNumeroOcorrencia] = useState("");
-
+  const [statusInicial, setStatusInicial] = useState("Pendente");
+  const [descricaoResumida, setDescricaoResumida] = useState("");
+  const [unidadeResponsavel, setUnidadeResponsavel] = useState("");
+  const [pontoBase, setPontoBase] = useState("");
+  const [viaturaUtilizada, setViaturaUtilizada] = useState("");
   const [numeracaoViatura, setNumeracaoViatura] = useState("");
-  const [loadingNumeracaoViatura, setLoadingNumeracaoViatura] = useState(false);
-  const [viaturas, setViaturas] = useState<any[]>([]);
-
   const [tempoResposta, setTempoResposta] = useState("");
   const [observacoesAdicionais, setObservacoesAdicionais] = useState("");
   const [complemento, setComplemento] = useState("");
@@ -148,7 +128,6 @@ export function NovaOcorrencia() {
   const [numero, setNumero] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
-  const [formaAcionamento, setFormaAcionamento] = useState("Telefone");
   const [isLoadingOffline, setIsLoadingOffline] = useState(false);
   /* const [users] = useState<string[]>([
     "Cabo Silva",
@@ -164,12 +143,13 @@ export function NovaOcorrencia() {
   // const [team, setTeam] = useState<string[]>([]);
   // const [teamQuery, setTeamQuery] = useState("");
   const [pessoas, setPessoas] = useState<Pessoa[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const signatureCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [signatureModalOpen, setSignatureModalOpen] = useState(false);
   const [modalCanvasRef, setModalCanvasRef] = useState<HTMLCanvasElement | null>(null);
   const [isModalDrawing, setIsModalDrawing] = useState(false);
+<<<<<<< HEAD
   const [assinaturaUrl, setAssinaturaUrl] = useState<string | undefined>(undefined);
   // armazena a assinatura localmente (dataURL) até o envio final ao salvar a ocorrência
   const [assinaturaDataUrl, setAssinaturaDataUrl] = useState<string | undefined>(undefined);
@@ -179,6 +159,8 @@ export function NovaOcorrencia() {
     id: 64
   });
 
+=======
+>>>>>>> parent of 619a74e (Merge pull request #8 from renatodelgado/main)
 
   type Pessoa = {
     id: number;
@@ -208,15 +190,6 @@ export function NovaOcorrencia() {
       }
     }
   }, [isOnline]);
-
-  useEffect(() => {
-    const now = new Date();
-    const offset = now.getTimezoneOffset();
-    const adjusted = new Date(now.getTime() - offset * 60 * 1000);
-    const formattedDate = adjusted.toISOString().replace(/[-:.TZ]/g, ""); // YYYYMMDDHHMMSS
-    setNumeroOcorrencia(`OCR${formattedDate}`);
-  }, []);
-
 
   async function fakeSendToServer(data: any) {
     console.log("Enviando para o servidor:", data);
@@ -319,8 +292,9 @@ export function NovaOcorrencia() {
     setPessoas((prev) => (prev.length > 0 ? prev.filter((p) => p.id !== id) : prev));
   };
 
-  const handleFileUpload = async (files: FileList | null) => {
+  const handleFileUpload = (files: FileList | null) => {
     if (!files) return;
+<<<<<<< HEAD
 
     // Apenas adiciona os arquivos localmente (não faz upload aqui).
     const newFiles: UploadedFile[] = Array.from(files).map((file) => ({
@@ -433,6 +407,11 @@ export function NovaOcorrencia() {
   }, []);
 
 
+=======
+    setUploadedFiles([...uploadedFiles, ...Array.from(files)]);
+  };
+
+>>>>>>> parent of 619a74e (Merge pull request #8 from renatodelgado/main)
   const startDrawing = (e: any) => {
     const canvas = signatureCanvasRef.current;
     if (!canvas) return;
@@ -481,14 +460,20 @@ export function NovaOcorrencia() {
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
   };
 
-  const saveSignature = async () => {
+  const saveSignature = () => {
     const canvas = signatureCanvasRef.current;
     if (!canvas) return;
+<<<<<<< HEAD
     // salva localmente (dataURL). O upload só ocorrerá quando salvar a ocorrência.
     const dataURL = canvas.toDataURL("image/png");
     setAssinaturaDataUrl(dataURL);
     setAssinaturaUrl(undefined);
     alert("Assinatura salva localmente. Será enviada ao salvar a ocorrência.");
+=======
+    const dataURL = canvas.toDataURL("image/png");
+    console.log("Assinatura capturada em base64:", dataURL);
+    alert("Assinatura salva (base64 gerada no console).");
+>>>>>>> parent of 619a74e (Merge pull request #8 from renatodelgado/main)
   };
 
   const startModalDrawing = (e: any) => {
@@ -567,6 +552,7 @@ export function NovaOcorrencia() {
       setIsLoadingOffline(true);
 
       setDataChamado(last.dataChamado || getCurrentDateTime());
+<<<<<<< HEAD
       // setNaturezaOcorrencia(last.naturezaOcorrencia || "Incêndio");
       setStatusAtendimento(last.statusAtendimento || "Pendente");
       setDescricao(last.descricao || "");
@@ -575,6 +561,16 @@ export function NovaOcorrencia() {
       // setLider(last.lider || "");
       // setPontoBase(last.pontoBase || "");
       // setViaturaUtilizada(last.viaturaUtilizada || "");
+=======
+      setTipoOcorrencia(last.tipoOcorrencia || "Incêndio");
+      setStatusInicial(last.statusInicial || "Pendente");
+      setDescricaoResumida(last.descricaoResumida || "");
+      setUnidadeResponsavel(last.unidadeResponsavel || "");
+      setChefe(last.chefe || "");
+      setLider(last.lider || "");
+      setPontoBase(last.pontoBase || "");
+      setViaturaUtilizada(last.viaturaUtilizada || "");
+>>>>>>> parent of 619a74e (Merge pull request #8 from renatodelgado/main)
       setNumeracaoViatura(last.numeracaoViatura || "");
       setTempoResposta(last.tempoResposta || "");
       setObservacoesAdicionais(last.observacoesAdicionais || "");
@@ -608,9 +604,8 @@ export function NovaOcorrencia() {
       setPessoas(normalizedPessoas);
 
       const arquivoNomes = Array.isArray(last.arquivos) ? last.arquivos : [];
-      const files = arquivoNomes.map((name: string) => ({ name, url: undefined }));
+      const files = arquivoNomes.map((name: string) => new File([new Uint8Array()], name));
       setUploadedFiles(files);
-
 
       setTimeout(() => setIsLoadingOffline(false), 0);
     }
@@ -624,55 +619,138 @@ export function NovaOcorrencia() {
 
   const handleUseLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocalização não suportada pelo navegador.");
+      console.error("Geolocalização não suportada pelo navegador.");
+      alert("Geolocalização não suportada. Preencha os dados manualmente.");
+      setForceManualLocationInput(true);
       return;
     }
 
+    const geoOptions = {
+      enableHighAccuracy: true,
+      timeout: 60000,
+      maximumAge: 0,
+    };
+
+    const fallbackGeoOptions = {
+      maximumAge: 0,
+      timeout: 10000,
+      enableHighAccuracy: false,
+    };
+
+    console.debug("Iniciando obtenção de localização (alta precisão)...");
+    setIsGeocoding(true);
+    setLatitude("");
+    setLongitude("");
+    setLogradouro("");
+    setNumero("");
+    setBairro("");
+    setSelectedMunicipioId("");
+    setSelectedMunicipioNome("");
+    setForceManualLocationInput(false);
+
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-
-        // Atualiza latitude e longitude
-        setLatitude(String(latitude));
-        setLongitude(String(longitude));
-
-        try {
-          const res = await fetch(
-            `https://backend-chama.up.railway.app/api/reverse-geocode?lat=${latitude}&lon=${longitude}`
-          );
-
-          if (!res.ok) throw new Error("Erro ao buscar endereço");
-
-          const data = await res.json();
-
-          // Preencher campos de endereço automaticamente
-          if (data.address) {
-            setLogradouro(data.address.road || "");
-            setNumero(data.address.house_number || "");
-            setBairro(data.address.suburb || "");
-            setComplemento(""); // pode usar referência se quiser
-            setReferencia(""); // opcional, você pode extrair de data.display_name se desejar
-            setSelectedMunicipioNome(data.address.city || "");
-            // se você tiver ID do município no frontend, pode mapear pelo nome
-            const municipio = municipios.find((m) => m.nome === data.address.city);
-            setSelectedMunicipioId(municipio ? municipio.id : "");
-          }
-
-          setForceManualLocationInput(false);
-        } catch (err) {
-          console.error("Erro no reverse geocoding:", err);
-          setForceManualLocationInput(true);
-          alert("Erro ao obter endereço. Preencha manualmente.");
-        }
+      (pos) => {
+        handlePosition(pos);
       },
       (err) => {
-        console.error("Erro ao obter localização:", err);
-        setForceManualLocationInput(true);
-      }
+        console.warn(`Erro na geolocalização de alta precisão: ${err.message} (código: ${err.code})`);
+        if (err.code === err.TIMEOUT) {
+          console.debug("Tentando fallback com baixa precisão...");
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              handlePosition(pos);
+            },
+            (err) => {
+              console.error(`Erro no fallback: ${err.message} (código: ${err.code})`);
+              setIsGeocoding(false);
+              setForceManualLocationInput(true);
+              let errorMessage = "Não foi possível obter a localização: ";
+              switch (err.code) {
+                case err.PERMISSION_DENIED:
+                  errorMessage += "Permissão de geolocalização negada.";
+                  break;
+                case err.POSITION_UNAVAILABLE:
+                  errorMessage += "Localização indisponível.";
+                  break;
+                case err.TIMEOUT:
+                  errorMessage += "Tempo limite atingido.";
+                  break;
+                default:
+                  errorMessage += err.message;
+              }
+              alert(errorMessage + " Preencha os dados manualmente.");
+            },
+            fallbackGeoOptions
+          );
+        } else {
+          setIsGeocoding(false);
+          setForceManualLocationInput(true);
+          alert(`Erro: ${err.message}. Preencha os dados manualmente.`);
+        }
+      },
+      geoOptions
     );
+
+    const handlePosition = (pos: GeolocationPosition) => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lon = pos.coords.longitude.toFixed(6);
+      setLatitude(lat);
+      setLongitude(lon);
+      console.debug(`Coordenadas obtidas: lat=${lat}, lon=${lon}, precisão=${pos.coords.accuracy}m`);
+
+      if (isOnline) {
+        console.debug("Online: realizando reverse geocoding...");
+        fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`,
+          { headers: { 'User-Agent': 'NovaOcorrenciaApp/1.0' } }
+        )
+          .then((res) => {
+            if (!res.ok) throw new Error(`Erro na API Nominatim: ${res.status}`);
+            return res.json();
+          })
+          .then((data) => {
+            console.debug("Resposta do reverse geocoding:", data);
+            const addr = data.address || {};
+            setLogradouro(addr.road || "");
+            setNumero(addr.house_number || "");
+            setBairro(addr.suburb || addr.neighbourhood || addr.village || "");
+            const munNome = addr.city || addr.town || addr.village || "";
+            const mun = municipios.find(
+              (m) => m.nome.toLowerCase() === munNome.toLowerCase()
+            );
+            if (mun) {
+              setSelectedMunicipioId(mun.id);
+              setSelectedMunicipioNome(mun.nome);
+              console.debug(`Município encontrado: ${mun.nome}`);
+            } else {
+              console.warn(`Município não encontrado: ${munNome}`);
+              setSelectedMunicipioId("");
+              setSelectedMunicipioNome(munNome);
+              setForceManualLocationInput(true);
+              alert("Município não encontrado. Preencha manualmente.");
+            }
+          })
+          .catch((err) => {
+            console.error("Erro no reverse geocoding:", err);
+            setForceManualLocationInput(true);
+            alert("Erro ao obter endereço. Preencha manualmente.");
+          })
+          .finally(() => {
+            setIsGeocoding(false);
+          });
+      } else {
+        console.debug("Offline: salvando apenas coordenadas.");
+        setForceManualLocationInput(true);
+        setLogradouro("");
+        setNumero("");
+        setBairro("");
+        setSelectedMunicipioId("");
+        setSelectedMunicipioNome("");
+        setIsGeocoding(false);
+        alert("Modo offline: apenas coordenadas salvas. Preencha manualmente.");
+      }
+    };
   };
-
-
 
   return (
     <ContainerPainel>
@@ -726,8 +804,13 @@ export function NovaOcorrencia() {
             <SectionTitle><FileTextIcon size={22} weight="fill" />Dados Principais</SectionTitle>
             <Grid>
               <Field>
-                <label>Número da Ocorrência</label>
-                <input type="text" value={numeroOcorrencia} readOnly />
+                <label className="required">Tipo de Ocorrência</label>
+                <select value={tipoOcorrencia} onChange={(e) => setTipoOcorrencia(e.target.value)}>
+                  <option>Incêndio</option>
+                  <option>Resgate</option>
+                  <option>Atendimento Pré-Hospitalar</option>
+                  <option>Outro</option>
+                </select>
               </Field>
               <Field>
                 <label className="required">Data/Hora do Chamado</label>
@@ -738,124 +821,19 @@ export function NovaOcorrencia() {
                 />
               </Field>
               <Field>
-                <label>Status de Atendimento</label>
-                <select value={statusAtendimento} onChange={(e) => {
-                  setStatusAtendimento(e.target.value);
-                  if (e.target.value !== "Não Atendido") setMotivoNaoAtendimento("");
-                }}>
+                <label>Status Inicial</label>
+                <select value={statusInicial} onChange={(e) => setStatusInicial(e.target.value)}>
                   <option>Pendente</option>
                   <option>Em andamento</option>
                   <option>Concluída</option>
-                  <option>Não Atendido</option>
                 </select>
               </Field>
-
-              {statusAtendimento === "Não Atendido" && (
-                <FullField>
-                  <label>Motivo de Não Atendimento</label>
-                  <textarea
-                    placeholder="Descreva o motivo pelo qual a ocorrência não foi atendida."
-                    value={motivoNaoAtendimento}
-                    onChange={(e) => setMotivoNaoAtendimento(e.target.value)}
-                  />
-                </FullField>
-              )}
-              <Field>
-                <label className="required">Natureza da Ocorrência</label>
-                {loadingNaturezas ? (
-                  <select disabled>
-                    <option>Carregando naturezas...</option>
-                  </select>
-                ) : (
-                  <select
-                    value={natureza}
-                    onChange={(e) => setNatureza(e.target.value)}
-                    required
-                  >
-                    <option value="">Selecione a natureza</option>
-                    {naturezasOcorrencias.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        {n.nome}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </Field>
-              <Field>
-                <label className="required">Grupo da Ocorrência</label>
-                {loadingGrupos ? (
-                  <select disabled>
-                    <option>Carregando grupos...</option>
-                  </select>
-                ) : (
-                  <select
-                    value={grupo}
-                    onChange={(e) => setGrupo(e.target.value)}
-                    required
-                  >
-                    <option value="">Selecione o grupo</option>
-                    {gruposOcorrencias
-                      .filter(g => String(g.naturezaOcorrencia?.id) === String(natureza)) // filtra por natureza
-                      .map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.nome}
-                        </option>
-                      ))}
-                  </select>
-                )}
-              </Field>
-
-              <Field>
-                <label className="required">Subgrupo da Ocorrência</label>
-                {loadingSubgrupos ? (
-                  <select disabled>
-                    <option>Carregando subgrupos...</option>
-                  </select>
-                ) : (
-                  <select
-                    value={subgrupo}
-                    onChange={(e) => setSubgrupo(e.target.value)}
-                    required
-                  >
-                    <option value="">Selecione o subgrupo</option>
-                    {subgruposOcorrencias
-                      .filter(s => String(s.grupoOcorrencia?.id) === String(grupo)) // filtra por grupo
-                      .map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.nome}
-                        </option>
-                      ))}
-                  </select>
-                )}
-              </Field>
-
-              <Field>
-                <label className="required">Forma de acionamento</label>
-                <select value={formaAcionamento} onChange={(e) => setFormaAcionamento(e.target.value)}>
-                  <option>Telefone</option>
-                  <option>Aplicativo</option>
-                  <option>Pessoalmente</option>
-                </select>
-              </Field>
-
-              <Field>
-                <label>Evento Especial?</label>
-                <select
-                  value={eventoEspecial ? "Sim" : "Não"}
-                  onChange={(e) => setEventoEspecial(e.target.value === "Sim")}
-                  disabled // bloqueado por enquanto
-                >
-                  <option value="Não">Não</option>
-                  <option value="Sim">Sim</option>
-                </select>
-              </Field>
-
               <FullField>
                 <label>Descrição Resumida</label>
                 <textarea
                   placeholder="Ex: Incêndio em veículo na Av. Norte, vítima consciente."
-                  value={descricao}
-                  onChange={(e) => setDescricao(e.target.value)}
+                  value={descricaoResumida}
+                  onChange={(e) => setDescricaoResumida(e.target.value)}
                 />
               </FullField>
             </Grid>
@@ -994,27 +972,20 @@ export function NovaOcorrencia() {
             <SectionTitle><FireTruckIcon size={22} weight="fill" /> Equipes e Viaturas</SectionTitle>
             <Grid>
               <Field>
-                <label className="required">Unidade Operacional</label>
-                {loadingUnidades ? (
-                  <select disabled>
-                    <option>Carregando unidades...</option>
-                  </select>
-                ) : (
-                  <select
-                    value={unidade}
-                    onChange={(e) => setUnidade(e.target.value)}
-                    required
-                  >
-                    <option value="">Selecione a unidade</option>
-                    {unidadesOperacionais.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.nome} ({u.pontoBase})
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <label>Unidade Responsável</label>
+                <select value={unidadeResponsavel} onChange={(e) => setUnidadeResponsavel(e.target.value)}>
+                  <option value="">Selecione a unidade</option>
+                  <option>1º GBM - Recife</option>
+                  <option>2º GBM - Olinda</option>
+                  <option>3º GBM - Caruaru</option>
+                  <option>4º GBM - Petrolina</option>
+                  <option>5º GBM - Garanhuns</option>
+                </select>
               </Field>
+<<<<<<< HEAD
               {/* 
+=======
+>>>>>>> parent of 619a74e (Merge pull request #8 from renatodelgado/main)
               <Field>
                 <label>Chefe de Ocorrência</label>
                 <select value={chefe} onChange={(e) => setChefe(e.target.value)}>
@@ -1087,7 +1058,10 @@ export function NovaOcorrencia() {
                   <option>Em deslocamento</option>
                 </select>
               </Field>
+<<<<<<< HEAD
               
+=======
+>>>>>>> parent of 619a74e (Merge pull request #8 from renatodelgado/main)
               <Field>
                 <label>Viatura Utilizada</label>
                 <select value={viaturaUtilizada} onChange={(e) => setViaturaUtilizada(e.target.value)}>
@@ -1099,27 +1073,14 @@ export function NovaOcorrencia() {
                   <option>Motocicleta</option>
                 </select>
               </Field>
-              */}
               <Field>
-                <label className="required">Número da Viatura</label>
-                {loadingNumeracaoViatura ? (
-                  <select disabled>
-                    <option>Carregando viaturas...</option>
-                  </select>
-                ) : (
-                  <select
-                    value={numeracaoViatura}
-                    onChange={(e) => setNumeracaoViatura(e.target.value)}
-                    required
-                  >
-                    <option value="">Selecione a numeração da viatura</option>
-                    {viaturas.map((v) => (
-                      <option key={v.id} value={v.id}>
-                        {v.tipo} - {v.numero}
-                      </option>
-                    ))}
-                  </select>
-                )}
+                <label>Numeração da Viatura</label>
+                <select value={numeracaoViatura} onChange={(e) => setNumeracaoViatura(e.target.value)}>
+                  <option value="">Selecione a numeração da viatura</option>
+                  <option>VT-001</option>
+                  <option>VT-002</option>
+                  <option>VT-003</option>
+                </select>
               </Field>
             </Grid>
           </BoxInfo>
@@ -1274,8 +1235,9 @@ export function NovaOcorrencia() {
                 onChange={(e) => handleFileUpload(e.target.files)}
               />
             </UploadArea>
-            {uploadedFiles.length > 0 && (
+            {uploadedFiles?.length > 0 && (
               <PreviewList>
+<<<<<<< HEAD
                 {uploadedFiles.map((f, idx) => (
                   <div key={idx} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <span>{f.name}</span>
@@ -1290,11 +1252,15 @@ export function NovaOcorrencia() {
                     ) : (
                       <span style={{ marginLeft: 8, color: "#64748b" }}>Local — será enviado ao salvar</span>
                     )}
+=======
+                {uploadedFiles.map((file, idx) => (
+                  <div key={idx}>
+                    <span>{file.name}</span>
+>>>>>>> parent of 619a74e (Merge pull request #8 from renatodelgado/main)
                   </div>
                 ))}
               </PreviewList>
             )}
-
             <Divider />
             <SectionSubtitle>Assinatura do Responsável</SectionSubtitle>
             <SignatureBox>
@@ -1363,20 +1329,18 @@ export function NovaOcorrencia() {
         </GridColumn>
       </ResponsiveRow>
 
-      {/* Informações de auditoria
       <ResponsiveRow>
         <GridColumn weight={1}>
           <BoxInfo>
             <SectionTitle><ClipboardTextIcon size={22} weight="fill" /> Informações de Auditoria</SectionTitle>
             <Grid>
-              <Field><label>Atendente Responsável</label><input value={usuarioLogado.nome} readOnly /></Field>
+              <Field><label>Atendente Responsável</label><input value="Ana Paula" readOnly /></Field>
               <Field><label>Data/Hora do Registro</label><input value="29/09/2025 12:33" readOnly /></Field>
               <Field><label>IP de Origem</label><input value="192.167.2.100" readOnly /></Field>
             </Grid>
           </BoxInfo>
         </GridColumn>
       </ResponsiveRow>
-*/}
 
       <ResponsiveRow>
         <GridColumn weight={1}>
@@ -1402,19 +1366,35 @@ export function NovaOcorrencia() {
               text="Salvar Ocorrência"
               type="button"
               variant="danger"
-              onClick={async () => {
-                try {
-                  // 1) enviar assinatura (se houver) com nome contendo o número da ocorrência
-                  let assinaturaUrl: string | undefined = undefined;
-                  if (signatureCanvasRef.current) {
-                    const canvas = signatureCanvasRef.current;
-                    const dataURL = canvas.toDataURL("image/png");
-                    const blob = await (await fetch(dataURL)).blob();
-                    const assinaturaFileName = `assinatura${numeroOcorrencia}.png`;
-                    const file = new File([blob], assinaturaFileName, { type: "image/png" });
-                    assinaturaUrl = await uploadToCloudinary(file);
-                  }
+              onClick={() => {
+                const ocorrencia = {
+                  tipoOcorrencia,
+                  dataChamado,
+                  statusInicial,
+                  descricaoResumida,
+                  unidadeResponsavel,
+                  chefe,
+                  lider,
+                  equipe: team,
+                  pontoBase,
+                  viaturaUtilizada,
+                  numeracaoViatura,
+                  municipioId: selectedMunicipioId,
+                  municipioNome: selectedMunicipioNome,
+                  bairro,
+                  logradouro,
+                  numero,
+                  complemento,
+                  referencia,
+                  latitude,
+                  longitude,
+                  pessoas,
+                  arquivos: uploadedFiles.map(f => f.name),
+                  tempoResposta,
+                  observacoesAdicionais,
+                };
 
+<<<<<<< HEAD
                   // 2) garantir que todos os arquivos tenham URL (uploadar os que ainda não têm)
                   const uploadedResults = await Promise.all(
                     uploadedFiles.map(async (f) => {
@@ -1515,12 +1495,13 @@ export function NovaOcorrencia() {
 
                   // 5) salvar localmente (fila offline) — opcional manter
                   const saved = saveOffline(payload);
+=======
+                const saved = saveOffline(ocorrencia);
+                if (saved) {
+>>>>>>> parent of 619a74e (Merge pull request #8 from renatodelgado/main)
                   setOfflineOccurrences(getOfflineOccurrences());
-
-                  console.log(payload)
-
-                  // 6) se online, enviar para backend e remover da fila
                   if (isOnline) {
+<<<<<<< HEAD
                     const response = await axios.post("https://backend-chama.up.railway.app/ocorrencias", payload, {
                       headers: { "Content-Type": "application/json" },
                     });
@@ -1573,17 +1554,21 @@ export function NovaOcorrencia() {
                         alert("Ocorrência enviada, mas falha ao enviar vítimas. Verifique o console.");
                       }
                     }
+=======
+                    fakeSendToServer(ocorrencia);
+>>>>>>> parent of 619a74e (Merge pull request #8 from renatodelgado/main)
                   } else {
                     alert("Sem internet. Ocorrência salva offline.");
                   }
-
-                  alert("Ocorrência salva com sucesso!");
-                } catch (err) {
-                  console.error("Erro ao salvar ocorrência:", err);
-                  alert("Falha ao salvar a ocorrência. Confira o console para detalhes.");
+                } else {
+                  console.warn("Ocorrência não salva localmente.");
                 }
               }}
             />
+<<<<<<< HEAD
+=======
+
+>>>>>>> parent of 619a74e (Merge pull request #8 from renatodelgado/main)
           </div>
         </GridColumn>
       </ResponsiveRow>
