@@ -471,7 +471,7 @@ export const TableWrapper = styled.div`
   }
 `;
 
-export const MobileCardWrapper = styled.div`
+export const UserCardWrapper = styled.div`
   display: none;
 
   @media (max-width: 768px) {
@@ -481,7 +481,7 @@ export const MobileCardWrapper = styled.div`
   }
 `;
 
-export const MobileCard = styled(BoxInfo)`
+export const UserCard = styled(BoxInfo)`
   display: flex;
   flex-direction: column;
   padding: 1rem;
