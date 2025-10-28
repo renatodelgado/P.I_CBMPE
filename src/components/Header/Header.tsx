@@ -19,20 +19,21 @@ import {
   MobileSubmenu,
 } from "./Header.styles";
 import logoImg from "../../assets/logo.svg";
-import { GaugeIcon, ChartBarIcon, PlusIcon, FileTextIcon, UserPlusIcon, PencilSimpleIcon, ListIcon, XIcon } from "@phosphor-icons/react";
+import { GaugeIcon, ChartBarIcon, PlusIcon, FileTextIcon, UserPlusIcon, PencilSimpleIcon, ListIcon, XIcon, HouseSimpleIcon, UsersIcon } from "@phosphor-icons/react";
 import { UserDropdown } from "../UserDropdown/UserDropdown";
 import { NotificationsDropdown } from "../NotificationsDropdown/NotificationsDropdown";
 
 export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const menuItems = [
     {
       key: "dashboard",
       label: "Dashboard",
       to: "/dashboard",
       children: [
+        { key: "home", label: "Início", to: "/dashboard", icon: <HouseSimpleIcon size={16} weight="bold" /> },
         { key: "overview", label: "Visão Geral", to: "/dashboard/overview", icon: <GaugeIcon size={16} weight="bold" /> },
         { key: "stats", label: "Estatísticas", to: "/dashboard/stats", icon: <ChartBarIcon size={16} weight="bold" /> },
       ],
@@ -42,6 +43,7 @@ export function Header() {
       label: "Ocorrências",
       to: "/ocorrencias",
       children: [
+        { key: "listar", label: "Listar Ocorrências", to: "/ocorrencias", icon: <ChartBarIcon size={16} weight="bold" /> },
         { key: "cadastrar", label: "Cadastrar Ocorrência", to: "/ocorrencias/cadastrar", icon: <PlusIcon size={16} weight="bold" /> },
       ],
     },
@@ -50,7 +52,7 @@ export function Header() {
       label: "Relatórios",
       to: "/relatorios",
       children: [
-        { key: "rapido", label: "Relatório Rápido", to: "/relatorios/rapido", icon: <FileTextIcon size={16} weight="bold" /> },
+        { key: "detalhado", label: "Relatórios Completos", to: "/relatorios", icon: <FileTextIcon size={16} weight="bold" /> },
       ],
     },
     {
@@ -58,6 +60,7 @@ export function Header() {
       label: "Usuários",
       to: "/usuarios",
       children: [
+        { key: "gestaoUsuarios", label: "Gestão de Usuários", to: "/usuarios", icon: <UsersIcon size={16} weight="bold" /> },
         { key: "cadastrarUsuario", label: "Cadastrar Usuário", to: "/usuarios/cadastrar", icon: <UserPlusIcon size={16} weight="bold" /> },
         { key: "editarUsuario", label: "Editar Usuário", to: "/usuarios/editar", icon: <PencilSimpleIcon size={16} weight="bold" /> },
       ],

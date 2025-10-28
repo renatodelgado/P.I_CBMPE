@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserIcon, TreeViewIcon, ShieldCheckIcon, CheckSquareIcon } from "@phosphor-icons/react";
+import { UserIcon, TreeViewIcon, ShieldCheckIcon } from "@phosphor-icons/react";
 import { Breadcrumb } from "../../components/Breadcrumb";
 import {
   ContainerPainel,
@@ -23,15 +23,9 @@ import axios from "axios";
 import { formatCPF } from "../../utils/formatCPF";
 import { formatPhone } from "../../utils/formatPhone";
 
-const PERFIS_DISPONIVEIS = [
-  { id: 1, nome: "Administrador", descricao: "Acesso total (gestão de usuários, logs, relatórios, dashboards)", color: "#dc2625" },
-  { id: 2, nome: "Gestor de Ocorrências", descricao: "Acesso para gestão de ocorrências e relatórios", color: "#f59e0b" },
-  { id: 3, nome: "Analista Estatístico", descricao: "Acesso para visualização de relatórios e estatísticas", color: "#3b82f6" },
-  { id: 4, nome: "Operador de Campo", descricao: "Acesso para registro de ocorrências no campo", color: "#10b981" },
-];
-
 export function NovoUsuario() {
   const navigate = useNavigate();
+
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -40,8 +34,59 @@ export function NovoUsuario() {
   const [perfil, setPerfil] = useState("Administrador");
   const [status, setStatus] = useState("Ativo");
   const [unidade, setUnidade] = useState("");
-  const [superior, setSuperior] = useState("");
-  const [turno, setTurno] = useState("");
+  const [patente, setPatente] = useState("");
+  const [funcao, setFuncao] = useState("");
+
+  const [perfisDisponiveis, setPerfisDisponiveis] = useState<
+    { id: number; nome: string; descricao: string; color?: string }[]
+  >([]);
+
+  const [loadingPerfis, setLoadingPerfis] = useState(true);
+
+  useEffect(() => {
+    const fetchPerfis = async () => {
+      try {
+        const response = await axios.get("https://backend-chama.up.railway.app/perfis");
+        // opcional: adicionar cores aos perfis
+        const cores = ["#dc2625", "#f59e0b", "#3b82f6", "#10b981"];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const perfisComCor = response.data.map((p: any, idx: number) => ({
+          ...p,
+          color: cores[idx % cores.length],
+        }));
+        setPerfisDisponiveis(perfisComCor);
+      } catch (error) {
+        console.error("Erro ao carregar perfis:", error);
+        alert("Erro ao carregar perfis");
+      } finally {
+        setLoadingPerfis(false);
+      }
+    };
+
+    fetchPerfis();
+  }, []);
+
+
+  const [unidadesOperacionais, setUnidadesOperacionais] = useState<
+    { id: number; nome: string; sigla: string; pontoBase: string }[]
+  >([]);
+  const [loadingUnidades, setLoadingUnidades] = useState(true);
+
+  useEffect(() => {
+    const fetchUnidades = async () => {
+      try {
+        const response = await axios.get("https://backend-chama.up.railway.app/unidadesoperacionais");
+        setUnidadesOperacionais(response.data);
+      } catch (error) {
+        console.error("Erro ao carregar unidades:", error);
+        alert("Erro ao carregar unidades operacionais");
+      } finally {
+        setLoadingUnidades(false);
+      }
+    };
+
+    fetchUnidades();
+  }, []);
 
   const sanitizeEmail = (value: string) => {
     let v = value.trim().toLowerCase();
@@ -54,37 +99,41 @@ export function NovoUsuario() {
 
 
   const handleSubmit = async (e: React.FormEvent) => {
-  
-  e.preventDefault();
+    e.preventDefault();
 
-  const selectedPerfil = PERFIS_DISPONIVEIS.find((p) => p.nome === perfil);
+    // Busca o perfil selecionado a partir da lista carregada
+    const selectedPerfil = perfisDisponiveis.find((p) => p.nome === perfil);
 
-  const newUser = {
-    nome,
-    patente: "Soldado", 
-    funcao: "Brigadista", 
-    email,
-    senha: "123456", 
-    unidadeOperacional: { id: 1 }, 
-    perfil: { id: selectedPerfil ?.id }, 
+    // Monta o objeto no formato que o backend espera
+    const newUser = {
+      nome,
+      matricula,
+      cpf: cpf.replace(/\D/g, ""),
+      patente,
+      funcao,
+      email,
+      senha: "123456",
+      perfilId: selectedPerfil?.id ?? null,
+      unidadeOperacionalId: unidade ? Number(unidade) : null,
+    };
+
+    try {
+      const response = await axios.post("https://backend-chama.up.railway.app/users", newUser);
+      console.log("✅ Usuário cadastrado com sucesso:", response.data);
+      alert("Usuário cadastrado com sucesso!");
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        console.error("❌ Erro ao cadastrar usuário:", error);
+        const remoteMessage = (error.response?.data as { message?: string } | undefined)?.message;
+        alert("Erro ao cadastrar usuário: " + (remoteMessage ?? error.message));
+      } else {
+        console.error("❌ Erro ao cadastrar usuário:", error);
+        alert("Erro ao cadastrar usuário: " + String(error));
+      }
+    }
   };
 
-  try {
-    const response = await axios.post("http://localhost:3333/users", newUser);
-    console.log("✅ Usuário cadastrado com sucesso:", response.data);
-    alert("Usuário cadastrado com sucesso!");
-  } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      console.error("❌ Erro ao cadastrar usuário:", error);
-      const remoteMessage = (error.response?.data as { message?: string } | undefined)?.message;
-      alert("Erro ao cadastrar usuário: " + (remoteMessage ?? error.message));
-    } else {
-      console.error("❌ Erro ao cadastrar usuário:", error);
-      alert("Erro ao cadastrar usuário: " + String(error));
-    }
-  }
-};
-  
+
 
   return (
     <ContainerPainel>
@@ -131,7 +180,7 @@ export function NovoUsuario() {
                     value={cpf}
                     onChange={(e) => setCpf(formatCPF(e.target.value))}
                     maxLength={14}
-                    
+
                   />
                 </Field>
 
@@ -142,7 +191,7 @@ export function NovoUsuario() {
                     placeholder="usuario@cbm.pe.gov.br"
                     value={email}
                     onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
-                    
+
                   />
                 </Field>
 
@@ -154,7 +203,7 @@ export function NovoUsuario() {
                     value={telefone}
                     onChange={(e) => setTelefone(formatPhone(e.target.value))}
                     maxLength={15}
-                    
+
                   />
                 </Field>
 
@@ -165,7 +214,7 @@ export function NovoUsuario() {
                     placeholder="Ex: 123456"
                     value={matricula}
                     onChange={(e) => setMatricula(e.target.value)}
-                    
+
                   />
                 </Field>
 
@@ -184,9 +233,10 @@ export function NovoUsuario() {
                 </Field>
               </Grid>
             </BoxInfo>
-
-            
-
+          </GridColumn>
+        </ResponsiveRow>
+        <ResponsiveRow>
+          <GridColumn weight={1}>
             {/* PERMISSÕES E FUNÇÃO */}
             <BoxInfo>
               <SectionTitle>
@@ -201,79 +251,126 @@ export function NovoUsuario() {
                   gap: "1rem",
                 }}
               >
-            {PERFIS_DISPONIVEIS.map((p) => (
-              <PerfilCard
-                key={p.id}
-                titulo={p.nome}
-                descricao={p.descricao}
-                ativo={perfil === p.nome}
-                color={p.color}
-                onClick={() => setPerfil(p.nome)}
-              />
-            ))}
+                {loadingPerfis ? (
+                  <p>Carregando perfis...</p>
+                ) : (
+                  perfisDisponiveis.map((p) => (
+                    <PerfilCard
+                      key={p.id}
+                      titulo={p.nome}
+                      descricao={p.descricao}
+                      ativo={perfil === p.nome}
+                      color={p.color}
+                      onClick={() => setPerfil(p.nome)}
+                    />
+                  ))
+                )}
               </div>
             </BoxInfo>
 
+          </GridColumn>
+        </ResponsiveRow>
+        <ResponsiveRow>
+          <GridColumn weight={1}>
             {/* VINCULAÇÃO HIERÁRQUICA */}
             <BoxInfo>
               <SectionTitle>
                 <TreeViewIcon size={22} weight="fill" />
-                Vinculação Hierárquica (opcional)
+                Vinculação Hierárquica
               </SectionTitle>
               <Grid>
                 <Field>
                   <label>Unidade / Grupamento</label>
-                  <select value={unidade} onChange={(e) => setUnidade(e.target.value)}>
-                    <option>Selecione a unidade</option>
-                    <option>1º Grupamento</option>
-                    <option>2º Grupamento</option>
-                  </select>
+                  {loadingUnidades ? (
+                    <select disabled>
+                      <option>Carregando unidades...</option>
+                    </select>
+                  ) : (
+                    <select
+                      value={unidade}
+                      onChange={(e) => setUnidade(e.target.value)}
+                      required
+                    >
+                      <option value="">Selecione a unidade</option>
+                      {unidadesOperacionais.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.nome} ({u.pontoBase})
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </Field>
                 <Field>
-                  <label>Superior Imediato</label>
-                  <select value={superior} onChange={(e) => setSuperior(e.target.value)}>
-                    <option>Selecione o superior</option>
-                    <option>Tenente Silva</option>
-                    <option>Capitão Oliveira</option>
+                  <label>Patente</label>
+                  <select value={patente} onChange={(e) => setPatente(e.target.value)}>
+                    <option value="">Selecione a patente</option>
+
+                    <optgroup label="Oficiais">
+                      <option>Coronel</option>
+                      <option>Tenente-Coronel</option>
+                      <option>Major</option>
+                      <option>Capitão</option>
+                      <option>1º Tenente</option>
+                      <option>2º Tenente</option>
+                      <option>Aspirante a Oficial</option>
+                    </optgroup>
+
+                    <optgroup label="Praças">
+                      <option>Subtenente</option>
+                      <option>1º Sargento</option>
+                      <option>2º Sargento</option>
+                      <option>3º Sargento</option>
+                      <option>Cabo</option>
+                      <option>Soldado</option>
+                    </optgroup>
+
+                    <optgroup label="Em formação">
+                      <option>Aluno Oficial</option>
+                      <option>Aluno Soldado</option>
+                    </optgroup>
                   </select>
+
                 </Field>
                 <Field>
-                  <label>Turno de Atuação</label>
-                  <select value={turno} onChange={(e) => setTurno(e.target.value)}>
-                    <option>Selecione o turno</option>
-                    <option>Manhã</option>
-                    <option>Tarde</option>
-                    <option>Noite</option>
+                  <label>Função</label>
+                  <select value={funcao} onChange={(e) => setFuncao(e.target.value)}>
+                    <option value="">Selecione a função</option>
+
+                    {/* Funções operacionais */}
+                    <option>Combate a Incêndio</option>
+                    <option>Busca e Salvamento</option>
+                    <option>Atendimento Pré-Hospitalar (APH)</option>
+                    <option>Brigadista</option>
+                    <option>Socorrista</option>
+                    <option>Motorista Operacional</option>
+                    <option>Mergulhador de Resgate</option>
+                    <option>Operador de Resgate Veicular</option>
+
+                    {/* Funções técnicas e de apoio */}
+                    <option>Vistoriador / Fiscal de Segurança Contra Incêndio</option>
+                    <option>Perito em Incêndio</option>
+                    <option>Instrutor / Treinador</option>
+                    <option>Operador de Comunicação</option>
+                    <option>Técnico de Material Bélico</option>
+                    <option>Técnico em Defesa Civil</option>
+                    <option>Condutor de Cães (Cinotécnico)</option>
+
+                    {/* Funções administrativas / estratégicas */}
+                    <option>Comandante / Subcomandante</option>
+                    <option>Chefe de Seção / Divisão</option>
+                    <option>Planejamento e Gestão Operacional</option>
+                    <option>Assessoria Técnica / Jurídica</option>
                   </select>
                 </Field>
+
               </Grid>
             </BoxInfo>
 
-            {/* PERMISSÕES ESPECÍFICAS */}
-            <BoxInfo>
-              <SectionTitle>
-                <CheckSquareIcon size={22} weight="fill" />
-                Permissões Específicas
-              </SectionTitle>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <label>
-                  <input type="checkbox" /> Visualizar relatórios estatísticos
-                </label>
-                <label>
-                  <input type="checkbox" /> Gerenciar usuários
-                </label>
-                <label>
-                  <input type="checkbox" /> Editar ocorrências
-                </label>
-                <label>
-                  <input type="checkbox" /> Exportar dados (CSV/PDF)
-                </label>
-                <label>
-                  <input type="checkbox" /> Acessar logs e auditorias
-                </label>
-              </div>
-            </BoxInfo>
+          </GridColumn>
+        </ResponsiveRow>
 
+        <ResponsiveRow>
+          <GridColumn weight={1}>
             {/* BOTÕES */}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
               <Button
