@@ -20,14 +20,16 @@ import {
   SavedFilterCard,
   MiniGrid,
   SavedFiltersBoxInfo,
-  PageTopHeaderColumn
+  PageTopHeaderColumn,
+  MobileCardWrapper,
+  MobileCard
 } from "../../components/EstilosPainel.styles";
 
 import {
   PlusIcon,
   EyeIcon,
   UserIcon,
-  InfoIcon,
+  InfoIcon
 } from "@phosphor-icons/react";
 import { Button } from "../../components/Button";
 
@@ -134,12 +136,12 @@ export function ListaOcorrencias() {
         setOcorrencias(mapped);
 
         // popula regioesDisponiveis a partir das localizacoes únicas presentes
-                const uniqueLocs: string[] = Array.from(new Set(
-                  mapped
-                    .map((m: any) => m.localizacao)
-                    .filter((l: string) => l && l !== "Não informada")
-                )).map(String);
-                setRegioesDisponiveis(uniqueLocs);
+        const uniqueLocs: string[] = Array.from(new Set(
+          mapped
+            .map((m: any) => m.localizacao)
+            .filter((l: string) => l && l !== "Não informada")
+        )).map(String);
+        setRegioesDisponiveis(uniqueLocs);
       } catch (error) {
         console.error("Erro ao buscar ocorrências:", error);
       }
@@ -155,7 +157,7 @@ export function ListaOcorrencias() {
     return ocorrencias.filter(o => {
       const { periodoInicio, periodoFim, tipo, regiao, viatura, buscaLivre, status, natureza } = filters;
 
-      const matchTipo = tipo === "todos" || ( (o.tipo || "").toLowerCase() === tipo.toLowerCase() );
+      const matchTipo = tipo === "todos" || ((o.tipo || "").toLowerCase() === tipo.toLowerCase());
       const matchRegiao = regiao === "todas" || o.localizacao.toLowerCase().includes(regiao.toLowerCase());
       const matchNatureza = natureza === "todos" || o.natureza.toLowerCase() === natureza.toLowerCase();
       const matchViatura = !viatura || o.viatura.toLowerCase().includes(viatura.toLowerCase());
@@ -480,6 +482,38 @@ export function ListaOcorrencias() {
                 </tbody>
               </Table>
             </TableWrapper>
+
+            <MobileCardWrapper>
+              {paginatedOcorrencias.map((o, i) => (
+              <MobileCard key={i}>
+                <div className="ocorrencia-header">
+                  <div className="ocorrencia-info">
+                    <strong>Ocorrência #{o.id}</strong>
+                    <div className="data-hora"> {o.data} <small>{o.hora}</small>
+                    </div> <div className="tipo">{o.natureza}</div> </div>
+                    <div className="status"
+                    style={{ color: getStatusColor(o.status),
+                    fontWeight: 600 }}> {o.status} </div> </div>
+                <div className="ocorrencia-details">
+                  <div className="detail"><span>Localização:</span> {o.localizacao}</div>
+                  <div className="detail"><span>Viatura:</span> {o.viatura}</div>
+                  <div className="detail"><span>Responsável:</span> {o.responsavel}</div>
+                </div>
+
+                <div className="actions">
+                  <button title="Visualizar" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
+                    <EyeIcon size={18} />
+                  </button>
+                  <button title="Atribuir" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
+                    <UserIcon size={18} />
+                  </button>
+                  <button title="Detalhes" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
+                    <InfoIcon size={18} />
+                  </button>
+                </div>
+              </MobileCard>
+            ))} </MobileCardWrapper>
+
 
             {/* Paginação */}
             <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", marginTop: "1rem" }}>
