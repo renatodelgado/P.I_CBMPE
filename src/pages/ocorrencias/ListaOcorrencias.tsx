@@ -17,9 +17,7 @@ import {
   GridColumn,
   AuditStatCard,
   SavedFilterCard,
-  MiniGrid,
-  SavedFiltersBoxInfo,
-  PageTopHeaderColumn
+  MiniGrid
 } from "../../components/EstilosPainel.styles";
 
 import {
@@ -43,7 +41,6 @@ const defaultFilters = {
   regiao: "todas",
   viatura: "",
   buscaLivre: "",
-  status: ["Pendente", "Em andamento", "Concluído"],
 };
 
 export function ListaOcorrencias() {
@@ -147,7 +144,7 @@ export function ListaOcorrencias() {
   // filtragem
   const filteredOcorrencias = useMemo(() => {
     return ocorrencias.filter(o => {
-      const { periodoInicio, periodoFim, tipo, regiao, viatura, buscaLivre, status } = filters;
+      const { periodoInicio, periodoFim, tipo, regiao, viatura, buscaLivre } = filters;
 
       const matchTipo = tipo === "todos" || o.tipo.toLowerCase() === tipo.toLowerCase();
       const matchRegiao = regiao === "todas" || o.localizacao.toLowerCase().includes(regiao.toLowerCase());
@@ -157,16 +154,13 @@ export function ListaOcorrencias() {
         o.responsavel.toLowerCase().includes(buscaLivre.toLowerCase()) ||
         o.localizacao.toLowerCase().includes(buscaLivre.toLowerCase());
 
-      const matchStatus = status.includes(o.status);
-
       let matchPeriodo = true;
       if (periodoInicio) matchPeriodo = o.data >= periodoInicio;
       if (periodoFim) matchPeriodo = matchPeriodo && o.data <= periodoFim;
 
-      return matchTipo && matchRegiao && matchViatura && matchBusca && matchPeriodo && matchStatus;
+      return matchTipo && matchRegiao && matchViatura && matchBusca && matchPeriodo;
     });
   }, [ocorrencias, filters]);
-
 
   // paginação
   const totalPages = Math.ceil(filteredOcorrencias.length / pageSize);
@@ -205,12 +199,12 @@ export function ListaOcorrencias() {
   return (
     <ContainerPainel>
       <PageTopHeaderRow>
-        <PageTopHeaderColumn>
+        <div>
           <PageTitle>Lista de Ocorrências</PageTitle>
           <PageSubtitle>Visualize e gerencie todas as ocorrências registradas com filtros avançados.</PageSubtitle>
-        </PageTopHeaderColumn>
+        </div>
         <ActionsRow>
-          <Button variant="danger" text={<><PlusIcon size={16} style={{ marginRight: 8 }} color="#fff" weight="bold" />Nova Ocorrência</>} onClick={handleNovaOcorrencia} />
+          <Button variant="danger" text={<><PlusIcon size={16} style={{ marginRight: 8 }} color="#fff" />Nova Ocorrência</>} onClick={handleNovaOcorrencia} />
         </ActionsRow>
       </PageTopHeaderRow>
 
@@ -243,7 +237,7 @@ export function ListaOcorrencias() {
           </MiniGrid>
 
         </GridColumn>
-
+        
       </ResponsiveRow>
 
       <ResponsiveRow>
@@ -281,103 +275,55 @@ export function ListaOcorrencias() {
                 <input type="text" placeholder="Digite para buscar..." value={filters.viatura} onChange={e => setFilters(f => ({ ...f, viatura: e.target.value }))} />
               </Field>
               <Field>
-                <label>Status</label>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
-                  {["Pendente", "Em andamento", "Concluído"].map(s => (
-                    <label key={s} style={{ fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <input
-                        type="checkbox"
-                        checked={filters.status.includes(s)}
-                        onChange={e => {
-                          setFilters(f => {
-                            const newStatus = e.target.checked
-                              ? [...f.status, s]
-                              : f.status.filter(item => item !== s);
-                            return { ...f, status: newStatus.length === 0 ? [] : newStatus };
-                          });
-                        }}
-                      />
-                      {s}
-                    </label>
-                  ))}
-                </div>
-              </Field>
-
-              <Field>
                 <label>Busca Livre</label>
                 <input type="text" placeholder="Pesquisar por ID, responsável, local..." value={filters.buscaLivre} onChange={e => setFilters(f => ({ ...f, buscaLivre: e.target.value }))} />
               </Field>
             </Grid>
 
             <ActionsRow>
+              <Button text="Filtrar" onClick={() => { }} variant="primary" />
               <Button text="Limpar" onClick={() => setFilters(defaultFilters)} variant="secondary" />
-              <Button text="Salvar Filtro" onClick={handleSalvarFiltro} variant="primary" />
+              <Button text="Salvar Filtro" onClick={handleSalvarFiltro} variant="secondary" />
             </ActionsRow>
           </BoxInfo>
         </GridColumn>
 
         {/* Coluna Filtros Salvos */}
         <GridColumn weight={1}>
-          <SavedFiltersBoxInfo>
+          <BoxInfo>
             <SectionTitle>Filtros Salvos</SectionTitle>
             <Grid>
               {savedFilters.length === 0 && <p style={{ fontSize: '13px', color: '#6b7280' }}>Nenhum filtro salvo.</p>}
 
               {savedFilters.map(f => {
-  const { tipo, regiao, viatura, periodoInicio, periodoFim, buscaLivre } = f.values;
+                const { tipo, regiao, viatura, periodoInicio, periodoFim, buscaLivre } = f.values;
 
-  const descricaoParts: string[] = [];
+                // montar descrição automaticamente conforme os filtros
+                const descricaoParts: string[] = [];
 
-  if (tipo && tipo !== "todos") descricaoParts.push(`Tipo: ${tipo}`);
-  if (regiao && regiao !== "todas") descricaoParts.push(`Região: ${regiao}`);
-  if (viatura) descricaoParts.push(`Viatura: ${viatura}`);
-  if (buscaLivre) descricaoParts.push(`Busca: ${buscaLivre}`);
-  if (f.values.status && f.values.status.length > 0) {
-    if (f.values.status.length !== 3) descricaoParts.push(`Status: ${f.values.status.join(", ")}`);
-  }
-  if (periodoInicio || periodoFim) {
-    descricaoParts.push(`Período: ${periodoInicio || "..."} até ${periodoFim || "..."}`);
-  }
+                if (tipo && tipo !== "todos") descricaoParts.push(`Tipo: ${tipo}`);
+                if (regiao && regiao !== "todas") descricaoParts.push(`Região: ${regiao}`);
+                if (viatura) descricaoParts.push(`Viatura: ${viatura}`);
+                if (buscaLivre) descricaoParts.push(`Busca: ${buscaLivre}`);
+                if (periodoInicio || periodoFim) {
+                  descricaoParts.push(
+                    `Período: ${periodoInicio || "..."} até ${periodoFim || "..."}`
+                  );
+                }
 
-  const descricao = descricaoParts.length > 0 ? descricaoParts.join(", ") : "Todos os registros";
+                const descricao =
+                  descricaoParts.length > 0 ? descricaoParts.join(", ") : "Todos os registros";
 
-  const handleRemoveFilter = (id: string) => {
-    setSavedFilters(prev => prev.filter(item => item.id !== id));
-  };
-
-  return (
-    <SavedFilterCard key={f.id}>
-      <div
-        className="filter-name"
-        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
-        onClick={() => handleApplySavedFilter(f)}
-      >
-        <span>{f.name}</span>
-        <button
-          style={{
-            border: "none",
-            background: "transparent",
-            color: "#ef4444",
-            cursor: "pointer",
-            fontWeight: "bold",
-            marginLeft: "8px",
-          }}
-          onClick={(e) => {
-            e.stopPropagation(); // evita que o clique aplique o filtro
-            handleRemoveFilter(f.id);
-          }}
-        >
-          ✕
-        </button>
-      </div>
-      <div className="filter-description">{descricao}</div>
-    </SavedFilterCard>
-  );
-})}
-
+                return (
+                  <SavedFilterCard key={f.id} onClick={() => handleApplySavedFilter(f)}>
+                    <div className="filter-name">{f.name}</div>
+                    <div className="filter-description">{descricao}</div>
+                  </SavedFilterCard>
+                );
+              })}
             </Grid>
 
-          </SavedFiltersBoxInfo>
+          </BoxInfo>
         </GridColumn>
       </ResponsiveRow>
 

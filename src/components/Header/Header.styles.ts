@@ -14,7 +14,7 @@ export const Container = styled.header`
   left: 0;
   right: 0;
   width: 100%;
-  height: 10vh;
+  height: 15%;
   box-sizing: border-box;
   z-index: 1000;
 `;
@@ -35,7 +35,7 @@ export const Brand = styled.div`
 
 /* logo image */
 export const BrandLogo = styled.img`
-  height: 3rem;
+  width: 3rem;
   cursor: pointer;
   filter: brightness(0) invert(1);
 
@@ -94,7 +94,7 @@ export const BrandSubtitle = styled.span`
   color: #cbd5e1;
 
   /* esconde só o subtitle em telas pequenas */
-  @media (max-width: 1080px) {
+  @media (max-width: 480px) {
     display: none;
   }
 `;
