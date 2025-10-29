@@ -95,20 +95,35 @@ export function ListaOcorrencias() {
 
         // Mapeamento do retorno para o formato que a tabela usa
         const mapped = data.map((o: any) => {
-          const dataObj = new Date(o.dataHoraChamada);
+          const dataObj = o.dataHoraChamada ? new Date(o.dataHoraChamada) : null;
 
-          const dataFormatada = dataObj.toLocaleDateString("pt-BR");
-          const horaFormatada = dataObj.toLocaleTimeString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
+          // valores padrão caso a data não seja válida
+          let dataFormatada: string = "N/A";
+          let horaFormatada: string = "";
+          let dataTimestamp: number | undefined = undefined;
+          let dataISO: string | undefined = undefined;
+
+          if (dataObj && !isNaN(dataObj.getTime())) {
+            // data válida
+            dataFormatada = dataObj.toLocaleDateString("pt-BR");
+            horaFormatada = dataObj.toLocaleTimeString("pt-BR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+            dataTimestamp = dataObj.getTime();
+            dataISO = dataObj.toISOString();
+            console.log(dataISO);
+          } else {
+            console.warn("Data inválida:", o.dataHoraChamada);
+            // mantenha os valores padrão ou ajuste conforme necessário
+          }
 
           return {
             id: o.numeroOcorrencia || `#OCR-${o.id}`,
             data: dataFormatada,
             hora: horaFormatada,
-            dataTimestamp: dataObj.getTime(), // <-- ADICIONADO: timestamp para comparações
-            dataISO: dataObj.toISOString(),   // opcional: para debug/exibição
+            dataTimestamp: dataTimestamp, // timestamp (pode ser undefined)
+            dataISO: dataISO,
             natureza: o.naturezaOcorrencia?.nome || "N/A",
             // localizacao já no formato "municipio - bairro"
             localizacao: o.localizacao
@@ -276,65 +291,78 @@ export function ListaOcorrencias() {
             <Grid>
               <Field>
                 <label>Período</label>
-                <DateRange>
-                  <input type="date" value={filters.periodoInicio} onChange={e => setFilters(f => ({ ...f, periodoInicio: e.target.value }))} />
-                  <input type="date" value={filters.periodoFim} onChange={e => setFilters(f => ({ ...f, periodoFim: e.target.value }))} />
-                </DateRange>
+                  <DateRange>
+                    <input type="date" value={filters.periodoInicio} onChange={e => setFilters(f => ({ ...f, periodoInicio: e.target.value }))} />
+                    <input type="date" value={filters.periodoFim} onChange={e => setFilters(f => ({ ...f, periodoFim: e.target.value }))} />
+                  </DateRange>
               </Field>
               <Field>
                 <label>Natureza da Ocorrência</label>
-                <select
-                  value={filters.natureza}
-                  onChange={e => setFilters(f => ({ ...f, natureza: e.target.value }))}
-                >
-                  <option value="todos">Todos</option>
-                  {naturezasOcorrencias.map(t => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field>
-                <label>Localização</label>
-                <select
-                  value={filters.regiao}
-                  onChange={e => setFilters(f => ({ ...f, regiao: e.target.value }))}
-                >
-                  <option value="todas">Todas</option>
-                  {regioesDisponiveis.map(r => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field>
-                <label>Viatura / Equipe</label>
-                <input type="text" placeholder="Digite para buscar..." value={filters.viatura} onChange={e => setFilters(f => ({ ...f, viatura: e.target.value }))} />
-              </Field>
-              <Field>
-                <label>Status</label>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
-                  {STATUS_OPTIONS.map(s => (
-                    <label key={s} style={{ fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <input
-                        type="checkbox"
-                        checked={filters.status.includes(s)}
-                        onChange={e => {
-                          setFilters(f => {
-                            const newStatus = e.target.checked
-                              ? [...f.status, s]
-                              : f.status.filter(item => item !== s);
-                            return { ...f, status: newStatus.length === 0 ? [] : newStatus };
-                          });
-                        }}
-                      />
-                      {s}
-                    </label>
-                  ))}
-                </div>
+                  <select
+                    value={filters.natureza}
+                    onChange={e => setFilters(f => ({ ...f, natureza: e.target.value }))}
+                  >
+                    <option value="todos">Todos</option>
+                    {naturezasOcorrencias.map((t, index) => (
+                      <option key={`${t}-${index}`} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                
               </Field>
 
               <Field>
+                <label>Localização</label>
+                  <select
+                    value={filters.regiao}
+                    onChange={e => setFilters(f => ({ ...f, regiao: e.target.value }))}
+                  >
+                    <option value="todas">Todas</option>
+                    {regioesDisponiveis.map((r, index) => (
+                      <option key={`${r}-${index}`} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                
+              </Field>
+
+              <Field>
+                <label>Viatura / Equipe</label>
+                  <input type="text" placeholder="Digite para buscar..." value={filters.viatura} onChange={e => setFilters(f => ({ ...f, viatura: e.target.value }))} />
+
+              </Field>
+              <Field>
+                <label>Status</label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
+                    {STATUS_OPTIONS.map((s, index) => (
+                      <label
+                        key={`${s}-${index}`}
+                        style={{ fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={filters.status.includes(s)}
+                          onChange={e => {
+                            setFilters(f => {
+                              const newStatus = e.target.checked
+                                ? [...f.status, s]
+                                : f.status.filter(item => item !== s);
+                              return { ...f, status: newStatus };
+                            });
+                          }}
+                        />
+                        {s}
+                      </label>
+                    ))}
+                  </div>
+              </Field>
+
+
+              <Field>
                 <label>Busca Livre</label>
-                <input type="text" placeholder="Pesquisar por ID, responsável, local..." value={filters.buscaLivre} onChange={e => setFilters(f => ({ ...f, buscaLivre: e.target.value }))} />
+                  <input type="text" placeholder="Pesquisar por ID, responsável, local..." value={filters.buscaLivre} onChange={e => setFilters(f => ({ ...f, buscaLivre: e.target.value }))} />
               </Field>
             </Grid>
 
@@ -485,34 +513,36 @@ export function ListaOcorrencias() {
 
             <MobileCardWrapper>
               {paginatedOcorrencias.map((o, i) => (
-              <MobileCard key={i}>
-                <div className="ocorrencia-header">
-                  <div className="ocorrencia-info">
-                    <strong>Ocorrência #{o.id}</strong>
-                    <div className="data-hora"> {o.data} <small>{o.hora}</small>
-                    </div> <div className="tipo">{o.natureza}</div> </div>
+                <MobileCard key={i}>
+                  <div className="ocorrencia-header">
+                    <div className="ocorrencia-info">
+                      <strong>Ocorrência #{o.id}</strong>
+                      <div className="data-hora"> {o.data} <small>{o.hora}</small>
+                      </div> <div className="tipo">{o.natureza}</div> </div>
                     <div className="status"
-                    style={{ color: getStatusColor(o.status),
-                    fontWeight: 600 }}> {o.status} </div> </div>
-                <div className="ocorrencia-details">
-                  <div className="detail"><span>Localização:</span> {o.localizacao}</div>
-                  <div className="detail"><span>Viatura:</span> {o.viatura}</div>
-                  <div className="detail"><span>Responsável:</span> {o.responsavel}</div>
-                </div>
+                      style={{
+                        color: getStatusColor(o.status),
+                        fontWeight: 600
+                      }}> {o.status} </div> </div>
+                  <div className="ocorrencia-details">
+                    <div className="detail"><span>Localização:</span> {o.localizacao}</div>
+                    <div className="detail"><span>Viatura:</span> {o.viatura}</div>
+                    <div className="detail"><span>Responsável:</span> {o.responsavel}</div>
+                  </div>
 
-                <div className="actions">
-                  <button title="Visualizar" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
-                    <EyeIcon size={18} />
-                  </button>
-                  <button title="Atribuir" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
-                    <UserIcon size={18} />
-                  </button>
-                  <button title="Detalhes" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
-                    <InfoIcon size={18} />
-                  </button>
-                </div>
-              </MobileCard>
-            ))} </MobileCardWrapper>
+                  <div className="actions">
+                    <button title="Visualizar" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
+                      <EyeIcon size={18} />
+                    </button>
+                    <button title="Atribuir" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
+                      <UserIcon size={18} />
+                    </button>
+                    <button title="Detalhes" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
+                      <InfoIcon size={18} />
+                    </button>
+                  </div>
+                </MobileCard>
+              ))} </MobileCardWrapper>
 
 
             {/* Paginação */}

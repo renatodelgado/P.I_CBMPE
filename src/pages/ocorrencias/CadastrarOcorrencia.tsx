@@ -1152,7 +1152,7 @@ export function NovaOcorrencia() {
                 </select>
               </Field>
               <Field>
-                <label>Equipe</label>
+                <label>Equipe</Equipe
                 <TeamSearchWrapper>
                   <TeamSearchInput
                     placeholder="Digite para buscar membros..."
@@ -1234,6 +1234,7 @@ export function NovaOcorrencia() {
                     ))}
                   </select>
                 )}
+                
               </Field>
             </Grid>
           </BoxInfo>
@@ -1462,7 +1463,8 @@ export function NovaOcorrencia() {
               <Field>
                 <label>Tempo Estimado de Resposta (min)</label>
                 <input value={tempoResposta} onChange={(e) => setTempoResposta(e.target.value)} />
-              </Field>
+              
+                </Field>
               <FullField>
                 <label>Observações Adicionais</label>
                 <textarea
@@ -1470,6 +1472,7 @@ export function NovaOcorrencia() {
                   value={observacoesAdicionais}
                   onChange={(e) => setObservacoesAdicionais(e.target.value)}
                 />
+                
               </FullField>
             </Grid>
           </BoxInfo>

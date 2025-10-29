@@ -299,6 +299,7 @@ export function NovoUsuario() {
                       ))}
                     </select>
                   )}
+                  
                 </Field>
                 <Field>
                   <label>Patente</label>
@@ -329,7 +330,6 @@ export function NovoUsuario() {
                       <option>Aluno Soldado</option>
                     </optgroup>
                   </select>
-
                 </Field>
                 <Field>
                   <label>Função</label>

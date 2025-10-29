@@ -357,8 +357,9 @@ export const UploadArea = styled.div`
   }
 `;
 
-/* Adicionado: Toggle switch simples (estilo liga/desliga) */
-export const ToggleSwitch = styled.button<{ active?: boolean }>`
+export const ToggleSwitch = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== "active", // <--- aqui
+})<{ active?: boolean }>`
   width: 52px;
   height: 28px;
   background: ${(p) => (p.active ? "#16a34a" : "#e5e7eb")};
