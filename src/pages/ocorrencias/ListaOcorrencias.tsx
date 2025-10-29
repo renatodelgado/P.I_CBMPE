@@ -200,14 +200,33 @@ export function ListaOcorrencias() {
   }, [ocorrencias, filters]);
 
 
-  // paginação
-  const totalPages = Math.ceil(filteredOcorrencias.length / pageSize);
-  const paginatedOcorrencias = filteredOcorrencias.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+// Corrige o cálculo do totalPages
+const totalPages = Math.max(1, Math.ceil(filteredOcorrencias.length / pageSize));
 
+// Garante que currentPage sempre esteja dentro do range válido
+useEffect(() => {
+  if (currentPage > totalPages && totalPages > 0) {
+    setCurrentPage(totalPages);
+  } else if (currentPage < 1) {
+    setCurrentPage(1);
+  }
+}, [totalPages, currentPage]);
+
+// Paginação correta - sempre retorna no máximo 6 itens
+const paginatedOcorrencias = useMemo(() => {
+  const start = (currentPage - 1) * pageSize;
+  const end = start + pageSize;
+  return filteredOcorrencias.slice(start, end);
+}, [filteredOcorrencias, currentPage, pageSize]);
+
+
+  // quando filtros mudam, volta para a primeira página
   useEffect(() => setCurrentPage(1), [filters]);
+
+  // se filteredOcorrencias encolher, ajusta currentPage para não ficar fora do range
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [totalPages, currentPage]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -468,7 +487,7 @@ export function ListaOcorrencias() {
         <GridColumn weight={3}>
           <BoxInfo>
             <SectionTitle>Resultados</SectionTitle>
-            <TableWrapper>
+            <TableWrapper className="TableWrapper">
               <Table>
                 <thead>
                   <tr>
@@ -511,7 +530,7 @@ export function ListaOcorrencias() {
               </Table>
             </TableWrapper>
 
-            <MobileCardWrapper>
+            <MobileCardWrapper className="MobileCardWrapper">
               {paginatedOcorrencias.map((o, i) => (
                 <MobileCard key={i}>
                   <div className="ocorrencia-header">

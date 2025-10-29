@@ -467,10 +467,12 @@ export const TableWrapper = styled.div`
     }
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 769px) {
     display: none;
   }
 `;
+
+
 
 export const MobileCardWrapper = styled.div`
   display: none;

@@ -4,6 +4,10 @@ import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './context/AuthContext'
 
+window.addEventListener("beforeunload", () => {
+  localStorage.clear();
+});
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
@@ -41,3 +45,4 @@ if ("serviceWorker" in navigator) {
       );
   });
 }
+

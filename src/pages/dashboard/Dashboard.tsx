@@ -531,13 +531,13 @@ export function DashboardOperacional() {
             <AlertIndicator />
             <AlertText>
               <strong>
-                Alerta: Aumento de {alertaPeriodo.aumento} ocorrência(s) em relação ao {filtroPeriodo === "dia" ? "ontem" :
-                  filtroPeriodo === "semana" ? "semana passada" :
-                    filtroPeriodo === "mes" ? "mês passado" :
-                      filtroPeriodo === "bimestre" ? "bimestre anterior" :
-                        filtroPeriodo === "trimestre" ? "trimestre anterior" :
-                          filtroPeriodo === "semestre" ? "semestre anterior" :
-                            "ano passado"}
+                Alerta: Aumento de {alertaPeriodo.aumento} ocorrência(s) em relação {filtroPeriodo === "dia" ? "a ontem" :
+                  filtroPeriodo === "semana" ? "à semana passada" :
+                    filtroPeriodo === "mes" ? "ao mês passado" :
+                      filtroPeriodo === "bimestre" ? "ao bimestre anterior" :
+                        filtroPeriodo === "trimestre" ? "ao trimestre anterior" :
+                          filtroPeriodo === "semestre" ? "ao semestre anterior" :
+                            "ao ano passado"}
               </strong>
               {alertaPeriodo.maiorRegiao && alertaPeriodo.aumentoRegiao > 0 && (
                 <div>Região com maior crescimento: {alertaPeriodo.maiorRegiao} ({alertaPeriodo.aumentoRegiao} ocorrência(s) a mais)</div>
