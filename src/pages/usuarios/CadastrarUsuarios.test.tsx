@@ -45,11 +45,11 @@ describe("Cadastrar novo usuário (NovoUsuario)", () => {
     expect(await screen.findByText(/Caruaru/)).toBeInTheDocument();
 
     // preencher formulário
-    await userEvent.type(screen.getByLabelText(/Nome completo/i), "João Teste");
-    await userEvent.type(screen.getByLabelText(/CPF/i), "123.456.789-01");
-    await userEvent.type(screen.getByLabelText(/E-mail institucional/i), "TESTE@EXEMPLO.COM ");
-    await userEvent.type(screen.getByLabelText(/Telefone/i), "(81) 91234-5678");
-    await userEvent.type(screen.getByLabelText(/Matrícula/i), "123456");
+    await userEvent.type(screen.getByPlaceholderText(/Nome completo/i), "João Teste");
+    await userEvent.type(screen.getByPlaceholderText(/CPF/i), "123.456.789-01");
+    await userEvent.type(screen.getByPlaceholderText(/E-mail institucional/i), "TESTE@EXEMPLO.COM ");
+    await userEvent.type(screen.getByPlaceholderText(/Telefone/i), "(81) 91234-5678");
+    await userEvent.type(screen.getByPlaceholderText(/Matrícula/i), "123456");
 
     // selecionar unidade (pela label criada: "2º GB - 2º Grupamento de Bombeiros (Caruaru)")
     const selectUnidade = screen.getByLabelText(/Unidade \/ Grupamento/i);
