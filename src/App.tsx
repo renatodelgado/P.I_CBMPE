@@ -1,6 +1,5 @@
 import { Login } from "./pages/Login";
-import {Dashboard} from "./pages/Dashboard";
-import {Auditoria} from "./pages/auditoria/Auditoria";
+import { Auditoria } from "./pages/auditoria/Auditoria";
 import { ListaOcorrencias } from "./pages/ocorrencias/ListaOcorrencias";
 import { Relatorios } from "./pages/Relatorios";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
@@ -10,6 +9,7 @@ import { NovoUsuario } from "./pages/usuarios/CadastrarUsuario";
 import { GestaoUsuarios } from "./pages/usuarios/GestaoUsuarios";
 import { EditarUsuario } from "./pages/usuarios/EditarUsuario";
 import { RelatorioRapido } from "./pages/relatorios/RelatorioRapido";
+import { DashboardOperacional } from "./pages/dashboard/Dashboard";
 
 
 function App() {
@@ -17,7 +17,7 @@ function App() {
      <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login/>}/>
-        <Route path="/dashboard" element={<> <Header/> <Dashboard/> </>}/>
+        <Route path="/dashboard" element={<> <Header/> <DashboardOperacional/> </>}/>
         <Route path="/ocorrencias" element={<> <Header/> <ListaOcorrencias/> </>}/>
         <Route path="/relatorios" element={<> <Header/> <Relatorios/> </>}/>
         <Route path="/relatorios/rapido" element={<> <Header/> <RelatorioRapido/> </>}/>
