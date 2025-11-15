@@ -19,7 +19,7 @@ import {
   MobileSubmenu,
 } from "./Header.styles";
 import logoImg from "../../assets/logo.svg";
-import { PlusIcon, FileTextIcon, UserPlusIcon, PencilSimpleIcon, ListIcon, XIcon, HouseSimpleIcon, UsersIcon, ChartBarIcon } from "@phosphor-icons/react";
+import { PlusIcon, FileTextIcon, UserPlusIcon, PencilSimpleIcon, ListIcon, XIcon, HouseSimpleIcon, UsersIcon, ChartBarIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { UserDropdown } from "../UserDropdown/UserDropdown";
 import { NotificationsDropdown } from "../NotificationsDropdown/NotificationsDropdown";
 
@@ -43,6 +43,7 @@ export function Header() {
       children: [
         { key: "listar", label: "Listar Ocorrências", to: "/ocorrencias", icon: <ChartBarIcon size={16} weight="bold" /> },
         { key: "cadastrar", label: "Cadastrar Ocorrência", to: "/ocorrencias/cadastrar", icon: <PlusIcon size={16} weight="bold" /> },
+        { key: "novo-cadastro", label: "Nova Ocorrência", to: "/ocorrencias/nova", icon: <WarningCircleIcon size={16} weight="bold" /> },
       ],
     },
     {

@@ -10,11 +10,14 @@ import { GestaoUsuarios } from "./pages/usuarios/GestaoUsuarios";
 import { EditarUsuario } from "./pages/usuarios/EditarUsuario";
 import { RelatorioRapido } from "./pages/relatorios/RelatorioRapido";
 import { DashboardOperacional } from "./pages/dashboard/Dashboard";
+import { CadastrarOcorrencia } from "./pages/ocorrencias/NovaOcorrencia";
+import { OfflineSync } from "./components/OfflineSync";
 
 
 function App() {
   return (
      <BrowserRouter>
+     <OfflineSync />
       <Routes>
         <Route path="/" element={<Login/>}/>
         <Route path="/dashboard" element={<> <Header/> <DashboardOperacional/> </>}/>
@@ -26,8 +29,8 @@ function App() {
         <Route path="/usuarios/cadastrar" element={<> <Header/> <NovoUsuario/> </>}/>
         <Route path="/usuarios/editar" element={<> <Header/> <EditarUsuario/> </>}/>
         <Route path="/ocorrencias/cadastrar" element={<> <Header/> <NovaOcorrencia/></>}/>
+        <Route path="/ocorrencias/nova" element={<> <Header/> <CadastrarOcorrencia/></>}/>
         </Routes>
-        
      </BrowserRouter>
   );
 }
