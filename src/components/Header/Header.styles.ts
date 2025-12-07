@@ -1,4 +1,10 @@
-import styled from "styled-components";
+import { styled, keyframes } from "styled-components";
+
+const spin = keyframes`
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+`;
+
 
 export const Container = styled.header`
   background-color: #1E293B;
@@ -347,5 +353,81 @@ export const MobileMenuItem = styled.button`
 
   &:hover {
     background: rgba(255, 255, 255, 0.02);
+  }
+`;
+
+export const SyncButton = styled.button<{ 
+  $isOnline: boolean; 
+  $hasDrafts: boolean;
+  $isSyncing?: boolean;
+}>`
+  background: ${props => {
+    if (props.$isSyncing) return '#f59e0b'; // Laranja para loading
+    return props.$isOnline ? 
+      (props.$hasDrafts ? '#e63939' : '#334155') : 
+      '#475569';
+  }};
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: ${props => (props.$isOnline && props.$hasDrafts && !props.$isSyncing) ? 'pointer' : 'not-allowed'};
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  position: relative;
+  opacity: ${props => (props.$isOnline && props.$hasDrafts && !props.$isSyncing) ? 1 : 0.7};
+
+  &:hover {
+    background: ${props => {
+      if (props.$isSyncing) return '#f59e0b';
+      return (props.$isOnline && props.$hasDrafts && !props.$isSyncing) ? 
+        '#d32f2f' : 
+        (props.$isOnline ? '#334155' : '#475569');
+    }};
+    transform: ${props => (props.$isOnline && props.$hasDrafts && !props.$isSyncing) ? 'translateY(-1px)' : 'none'};
+  }
+
+  &:active {
+    transform: ${props => props.$isOnline && props.$hasDrafts ? 'translateY(0)' : 'none'};
+  }
+
+  .sync-text {
+    white-space: nowrap;
+  }
+
+  .spin {
+    animation: ${spin} 1s linear infinite;
+  }
+
+  .drafts-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+
+  /* Mobile */
+  @media (max-width: 768px) {
+    padding: 4px 8px;
+    font-size: 11px;
+    
+    .drafts-badge {
+      width: 16px;
+      height: 16px;
+      font-size: 9px;
+    }
   }
 `;

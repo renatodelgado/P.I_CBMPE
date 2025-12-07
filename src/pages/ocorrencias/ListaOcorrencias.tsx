@@ -32,6 +32,11 @@ import {
   InfoIcon
 } from "@phosphor-icons/react";
 import { Button } from "../../components/Button";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+// Import das funções de API do api.ts
+import { fetchOcorrencias, fetchNaturezasOcorrencias, fetchRegioes } from "../../services/api";
 
 interface FiltroSalvo {
   id: string;
@@ -71,14 +76,13 @@ export function ListaOcorrencias() {
   useEffect(() => {
     async function fetchOptions() {
       try {
-        // regiões
-        const regResp = await fetch("https://backend-chama.up.railway.app/regioes");
-        const regData = await regResp.json();
-        setRegioesDisponiveis(regData.map((r: any) => r.nome)); // ajusta conforme seu JSON
+        // Usando as funções importadas do api.ts
+        const [regData, tipoData] = await Promise.all([
+          fetchRegioes(),
+          fetchNaturezasOcorrencias(),
+        ]);
 
-        // tipos
-        const tipoResp = await fetch("https://backend-chama.up.railway.app/naturezasocorrencias");
-        const tipoData = await tipoResp.json();
+        setRegioesDisponiveis(regData.map((r: any) => r.nome)); // ajusta conforme seu JSON
         setNaturezasOcorrencias(tipoData.map((t: any) => t.nome)); // ajusta conforme seu JSON
       } catch (err) {
         console.error("Erro ao buscar opções:", err);
@@ -88,10 +92,9 @@ export function ListaOcorrencias() {
   }, []);
 
   useEffect(() => {
-    async function fetchOcorrencias() {
+    async function fetchOcorrenciasData() {
       try {
-        const response = await fetch("https://backend-chama.up.railway.app/ocorrencias");
-        const data = await response.json();
+        const data = await fetchOcorrencias();
 
         // Mapeamento do retorno para o formato que a tabela usa
         const mapped = data.map((o: any) => {
@@ -162,7 +165,7 @@ export function ListaOcorrencias() {
       }
     }
 
-    fetchOcorrencias();
+    fetchOcorrenciasData();
   }, []);
 
 
@@ -254,6 +257,50 @@ const paginatedOcorrencias = useMemo(() => {
 
   const handleApplySavedFilter = (filtro: FiltroSalvo) => setFilters(filtro.values);
 
+  const handleExportCsv = () => {
+    const header = ["ID", "Data", "Hora", "Natureza", "Localização", "Viatura", "Status", "Responsável"];
+    const rows = filteredOcorrencias.map(o => [
+      o.id,
+      o.data,
+      o.hora,
+      o.natureza,
+      o.localizacao,
+      o.viatura,
+      o.status,
+      o.responsavel
+    ]);
+
+    const csv = [header, ...rows]
+      .map(row => row.map(val => `"${String(val ?? "").replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "ocorrencias.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPdf = () => {
+    const doc = new jsPDF();
+    const header = ["ID", "Data", "Hora", "Natureza", "Localização", "Viatura", "Status", "Responsável"];
+    const rows = filteredOcorrencias.map(o => [
+      o.id,
+      o.data,
+      o.hora,
+      o.natureza,
+      o.localizacao,
+      o.viatura,
+      o.status,
+      o.responsavel
+    ]);
+
+    autoTable(doc, { head: [header], body: rows });
+    doc.save("ocorrencias.pdf");
+  };
+
   return (
     <ContainerPainel>
       <PageTopHeaderRow>
@@ -271,32 +318,50 @@ const paginatedOcorrencias = useMemo(() => {
         <GridColumn weight={1}>
 
           <MiniGrid>
+            {(() => {
+              const counts = {
+                total: ocorrencias.length,
+                pendente: ocorrencias.filter(o => o.status === "Pendente").length,
+                andamento: ocorrencias.filter(o => o.status === "Em andamento").length,
+                concluida: ocorrencias.filter(o => o.status === "Concluída").length,
+                naoAtendida: ocorrencias.filter(o => o.status === "Não Atendida").length,
+              };
 
-            <AuditStatCard>
-              <h3>{ocorrencias.length}</h3>
-              <span>Total de Ocorrências</span>
-            </AuditStatCard>
+              const allSelected = filters.status.length === STATUS_OPTIONS.length;
+              const isSelectedStatus = (s: string) => !allSelected && filters.status.length === 1 && filters.status[0] === s;
+              const selectStatus = (s: string | 'Total') => {
+                if (s === 'Total') {
+                  setFilters(f => ({ ...f, status: [...STATUS_OPTIONS] }));
+                } else {
+                  setFilters(f => ({ ...f, status: [s] }));
+                }
+                setCurrentPage(1);
+              };
 
-            <AuditStatCard>
-              <h3>{ocorrencias.filter(o => o.status === "Pendente").length}</h3>
-              <span>Pendentes</span>
-            </AuditStatCard>
+              return (
+                <>
+                  <AuditStatCard onClick={() => selectStatus('Total')} style={{ cursor: 'pointer', border: allSelected ? '2px solid #3B82F6' : undefined, boxShadow: allSelected ? '0 0 0 4px rgba(59,130,246,0.08)' : undefined }}>
+                    <h3>{counts.total}</h3><span>Total de Ocorrências</span>
+                  </AuditStatCard>
 
-            <AuditStatCard>
-              <h3>{ocorrencias.filter(o => o.status === "Em andamento").length}</h3>
-              <span>Em Andamento</span>
-            </AuditStatCard>
+                  <AuditStatCard onClick={() => selectStatus('Pendente')} style={{ cursor: 'pointer', border: isSelectedStatus('Pendente') ? '2px solid #EF4444' : undefined, boxShadow: isSelectedStatus('Pendente') ? '0 0 0 4px rgba(239,68,68,0.08)' : undefined }}>
+                    <h3>{counts.pendente}</h3><span>Pendentes</span>
+                  </AuditStatCard>
 
-            <AuditStatCard>
-              <h3>{ocorrencias.filter(o => o.status === "Concluída").length}</h3>
-              <span>Concluídas</span>
-            </AuditStatCard>
+                  <AuditStatCard onClick={() => selectStatus('Em andamento')} style={{ cursor: 'pointer', border: isSelectedStatus('Em andamento') ? '2px solid #3B82F6' : undefined, boxShadow: isSelectedStatus('Em andamento') ? '0 0 0 4px rgba(59,130,246,0.08)' : undefined }}>
+                    <h3>{counts.andamento}</h3><span>Em Andamento</span>
+                  </AuditStatCard>
 
-            <AuditStatCard>
-              <h3>{ocorrencias.filter(o => o.status === "Não Atendida").length}</h3>
-              <span>Não Atendidas</span>
-            </AuditStatCard>
+                  <AuditStatCard onClick={() => selectStatus('Concluída')} style={{ cursor: 'pointer', border: isSelectedStatus('Concluída') ? '2px solid #10B981' : undefined, boxShadow: isSelectedStatus('Concluída') ? '0 0 0 4px rgba(16,185,129,0.08)' : undefined }}>
+                    <h3>{counts.concluida}</h3><span>Concluídas</span>
+                  </AuditStatCard>
 
+                  <AuditStatCard onClick={() => selectStatus('Não Atendida')} style={{ cursor: 'pointer', border: isSelectedStatus('Não Atendida') ? '2px solid #F59E0B' : undefined, boxShadow: isSelectedStatus('Não Atendida') ? '0 0 0 4px rgba(245,158,11,0.08)' : undefined }}>
+                    <h3>{counts.naoAtendida}</h3><span>Não Atendidas</span>
+                  </AuditStatCard>
+                </>
+              );
+            })()}
           </MiniGrid>
 
         </GridColumn>
@@ -486,7 +551,13 @@ const paginatedOcorrencias = useMemo(() => {
       <ResponsiveRow>
         <GridColumn weight={3}>
           <BoxInfo>
-            <SectionTitle>Resultados</SectionTitle>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <SectionTitle>Resultados</SectionTitle>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <Button text="Exportar CSV" variant="secondary" onClick={handleExportCsv} />
+                <Button text="Exportar PDF" variant="secondary" onClick={handleExportPdf} />
+              </div>
+            </div>
             <TableWrapper className="TableWrapper">
               <Table>
                 <thead>

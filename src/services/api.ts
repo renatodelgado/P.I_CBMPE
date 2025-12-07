@@ -1,7 +1,545 @@
-import axios from "axios";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// api.ts (refatorado)
 
-const api = axios.create({
-  baseURL: "http://localhost:5173", 
-});
+import { uploadToCloudinary } from "../utils/uploadToCloudinary";
 
-export default api;
+const BASE_URL = "http://localhost:3000";
+
+/** -------------------------
+ * Tipagens básicas (podem ampliar conforme a API)
+ * ------------------------- */
+export interface Usuario {
+  id: number;
+  nome?: string;
+  matricula?: string;
+  email?: string;
+  patente?: string;
+  funcao?: string;
+  status?: boolean;
+  [k: string]: any;
+}
+
+export interface Localizacao {
+  id?: number;
+  municipio?: string;
+  bairro?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  pontoReferencia?: string;
+  latitude?: string;
+  longitude?: string;
+  [k: string]: any;
+}
+
+export interface Viatura {
+  id?: number;
+  tipo?: string;
+  numero?: string;
+  placa?: string;
+  [k: string]: any;
+}
+
+export interface NaturezaOcorrencia {
+  id?: number;
+  nome?: string;
+  [k: string]: any;
+}
+
+export interface Anexo {
+  id?: number;
+  urlArquivo?: string;
+  nomeArquivo?: string;
+  extensaoArquivo?: string;
+  tipoArquivo?: string;
+  dataCriacao?: string;
+  [k: string]: any;
+}
+
+export interface OcorrenciaAPI {
+  id: number;
+  numeroOcorrencia?: string;
+  dataHoraChamada?: string;
+  statusAtendimento?: string;
+  descricao?: string;
+  formaAcionamento?: string;
+  dataSincronizacao?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  naturezaOcorrencia?: NaturezaOcorrencia | null;
+  grupoOcorrencia?: any | null;
+  subgrupoOcorrencia?: any | null;
+  viatura?: Viatura | null;
+  localizacao?: Localizacao | null;
+  usuario?: Usuario | null;
+  unidadeOperacional?: any | null;
+  eventoEspecial?: any | null;
+  anexos?: Anexo[];
+  [k: string]: any;
+}
+
+/** -------------------------
+ * Helpers
+ * ------------------------- */
+
+async function requestJson(url: string, options: RequestInit = {}, timeout = 30000): Promise<any> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+    });
+    clearTimeout(id);
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      const err = new Error(`HTTP ${res.status} ${res.statusText} - ${text}`);
+      // attach status for callers
+      (err as any).status = res.status;
+      throw err;
+    }
+    // tenta parsear json, se não for json, devolve texto
+    const ct = res.headers.get("content-type") || "";
+    if (ct.includes("application/json")) return res.json();
+    return res.text();
+  } catch (err) {
+    clearTimeout(id);
+    // Re-lança o erro para o caller decidir
+    throw err;
+  }
+}
+
+/** -------------------------
+ * Ocorrências
+ * ------------------------- */
+
+/** Faz login com matrícula/senha — rota: POST /auth/login/ */
+export async function login(matricula: string, senha: string): Promise<any> {
+  try {
+    return await requestJson(`${BASE_URL}/auth/login/`, {
+      method: 'POST',
+      body: JSON.stringify({ matricula, senha }),
+    });
+  } catch (error) {
+    console.error('Erro na API de login:', error);
+    throw error;
+  }
+}
+
+/** Buscar todas as ocorrências (sem filtros complexos) */
+export async function fetchOcorrencias(): Promise<OcorrenciaAPI[]> {
+  try {
+    return await requestJson(`${BASE_URL}/ocorrencias`);
+  } catch (error) {
+    console.error("Erro na API de ocorrências:", error);
+    return [];
+  }
+}
+
+/** Buscar ocorrência por ID (rota: GET /ocorrencias/:id) */
+export async function getOcorrenciaPorId(id: string | number): Promise<OcorrenciaAPI | null> {
+  try {
+    const raw = await requestJson(`${BASE_URL}/ocorrencias/${encodeURIComponent(String(id))}`);
+    return raw as OcorrenciaAPI;
+  } catch (error) {
+    console.error(`Erro ao buscar ocorrência ${id}:`, error);
+    return null;
+  }
+}
+
+/** Buscar ocorrências do usuário (rota existente) */
+export async function fetchOcorrenciasUsuario(usuarioId: number): Promise<OcorrenciaAPI[]> {
+  try {
+    return await requestJson(`${BASE_URL}/ocorrencias/usuario/${usuarioId}`);
+  } catch (error) {
+    console.error("Erro na API de ocorrências do usuário:", error);
+    return [];
+  }
+}
+
+/** Buscar ocorrências com filtro de período (dataInicio/dataFim) */
+export async function fetchOcorrenciasComFiltro(periodo?: { inicio: string; fim: string }): Promise<OcorrenciaAPI[]> {
+  try {
+    let url = `${BASE_URL}/ocorrencias`;
+    if (periodo?.inicio && periodo?.fim) {
+      url += `?dataInicio=${encodeURIComponent(periodo.inicio)}&dataFim=${encodeURIComponent(periodo.fim)}`;
+    }
+    return await requestJson(url);
+  } catch (error) {
+    console.error("Erro na API de ocorrências com filtro:", error);
+    return [];
+  }
+}
+
+/** Buscar ocorrências por natureza (aceita naturezaId numérico) */
+export async function fetchOcorrenciasPorNatureza(naturezaId: number, periodo?: { inicio: string; fim: string }): Promise<OcorrenciaAPI[]> {
+  try {
+    let url = `${BASE_URL}/ocorrencias?naturezaId=${encodeURIComponent(String(naturezaId))}`;
+    if (periodo?.inicio && periodo?.fim) {
+      url += `&dataInicio=${encodeURIComponent(periodo.inicio)}&dataFim=${encodeURIComponent(periodo.fim)}`;
+    }
+    return await requestJson(url);
+  } catch (error) {
+    console.error("Erro na API de ocorrências por natureza:", error);
+    return [];
+  }
+}
+
+/** Postar ocorrência (criação) */
+export async function postOcorrencia(payload: any): Promise<any> {
+  try {
+    return await requestJson(`${BASE_URL}/ocorrencias`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    console.error("Erro na API de post ocorrência:", error);
+    throw error;
+  }
+}
+
+/** Postar ocorrência com timeout configurável (útil para offline sync) */
+export async function postOcorrenciaComTimeout(payload: any, timeout = 30000): Promise<any> {
+  try {
+    return await requestJson(`${BASE_URL}/ocorrencias`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }, timeout);
+  } catch (error) {
+    console.error("Erro na API de post ocorrência com timeout:", error);
+    throw error;
+  }
+}
+
+/** -------------------------
+ * Vítimas
+ * ------------------------- */
+
+export async function postVitima(payload: any): Promise<any> {
+  try {
+    return await requestJson(`${BASE_URL}/vitimas/`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    console.error("Erro na API de post vítima:", error);
+    throw error;
+  }
+}
+
+export async function postVitimaComTimeout(payload: any, timeout = 15000): Promise<any> {
+  try {
+    return await requestJson(`${BASE_URL}/vitimas/`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }, timeout);
+  } catch (error) {
+    console.error("Erro na API de post vítima com timeout:", error);
+    throw error;
+  }
+}
+
+// NOVA FUNÇÃO: associar usuário à ocorrência (POST /ocorrencia-user)
+export async function postOcorrenciaUsuario(payload: { ocorrenciaId: number; userId: number }): Promise<any> {
+  try {
+    return await requestJson(`${BASE_URL}/ocorrencia-user`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    console.error("Erro na API de post ocorrencia-user:", error);
+    throw error;
+  }
+}
+
+/** -------------------------
+ * Usuários / Perfis / Unidades
+ * ------------------------- */
+
+export async function fetchUsuarios(): Promise<Usuario[]> {
+  try {
+    return await requestJson(`${BASE_URL}/users`);
+  } catch (error) {
+    console.error("Erro na API de usuários:", error);
+    return [];
+  }
+}
+
+export async function fetchUsuario(id: number): Promise<Usuario | null> {
+  try {
+    return await requestJson(`${BASE_URL}/users/id/${id}`);
+  } catch (error) {
+    console.error("Erro na API de usuário:", error);
+    return null;
+  }
+}
+
+export async function postUsuario(payload: any): Promise<any> {
+  try {
+    return await requestJson(`${BASE_URL}/users`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    console.error("Erro na API de post usuário:", error);
+    throw error;
+  }
+}
+
+export async function fetchPerfis(): Promise<any[]> {
+  try {
+    return await requestJson(`${BASE_URL}/perfis`);
+  } catch (error) {
+    console.error("Erro na API de perfis:", error);
+    return [];
+  }
+}
+
+export async function fetchUnidadesOperacionais(): Promise<any[]> {
+  try {
+    return await requestJson(`${BASE_URL}/unidadesoperacionais`);
+  } catch (error) {
+    console.error("Erro na API de unidades operacionais:", error);
+    return [];
+  }
+}
+
+/** -------------------------
+ * Naturezas / Grupos / Subgrupos / Viaturas
+ * ------------------------- */
+
+export async function fetchNaturezasOcorrencias(): Promise<NaturezaOcorrencia[]> {
+  try {
+    return await requestJson(`${BASE_URL}/naturezasocorrencias`);
+  } catch (error) {
+    console.error("Erro na API de naturezas:", error);
+    return [];
+  }
+}
+
+export async function fetchGruposOcorrencias(): Promise<any[]> {
+  try {
+    return await requestJson(`${BASE_URL}/gruposocorrencias`);
+  } catch (error) {
+    console.error("Erro na API de grupos de ocorrências:", error);
+    return [];
+  }
+}
+
+export async function fetchSubgruposOcorrencias(): Promise<any[]> {
+  try {
+    return await requestJson(`${BASE_URL}/subgruposocorrencias`);
+  } catch (error) {
+    console.error("Erro na API de subgrupos de ocorrências:", error);
+    return [];
+  }
+}
+
+export async function fetchViaturas(): Promise<Viatura[]> {
+  try {
+    return await requestJson(`${BASE_URL}/viaturas`);
+  } catch (error) {
+    console.error("Erro na API de viaturas:", error);
+    return [];
+  }
+}
+
+/** -------------------------
+ * Regiões / IBGE / OSM
+ * ------------------------- */
+
+export async function fetchRegioes(): Promise<any[]> {
+  try {
+    return await requestJson(`${BASE_URL}/regioes`);
+  } catch (error) {
+    console.error("Erro na API de regiões:", error);
+    return [];
+  }
+}
+
+export async function fetchMunicipiosPE(): Promise<any[]> {
+  try {
+    return await requestJson('https://servicodados.ibge.gov.br/api/v1/localidades/estados/26/municipios');
+  } catch (error) {
+    console.error("Erro na API de municípios de PE:", error);
+    return [];
+  }
+}
+
+export async function fetchBairrosFromOSM(municipio: string): Promise<any> {
+  try {
+    const q = encodeURIComponent(municipio);
+    const url = `https://overpass-api.de/api/interpreter?data=[out:json];relation["boundary"="administrative"]["admin_level"="9"]["name"~"^${q}$",i](around:5000,-8.0475622,-34.8770043);out;>;out skel qt;`;
+    return await requestJson(url);
+  } catch (error) {
+    console.error("Erro na API de bairros de OSM:", error);
+    return [];
+  }
+}
+
+/** -------------------------
+ * Geocoding / Reverse
+ * ------------------------- */
+
+export async function fetchGeocode(query: string): Promise<any[]> {
+  try {
+    const url = `${BASE_URL}/api/geocode?q=${encodeURIComponent(query)}`;
+    return await requestJson(url);
+  } catch (error) {
+    console.error("Erro no geocoding:", error);
+    return [];
+  }
+}
+
+export async function fetchGeocodeCompleto(query: string): Promise<any[]> {
+  try {
+    const data = await fetchGeocode(query);
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error("Erro no geocoding completo:", err);
+    return [];
+  }
+}
+
+export async function fetchReverseGeocode(lat: number, lon: number): Promise<any> {
+  try {
+    return await requestJson(`${BASE_URL}/api/reverse-geocode?lat=${encodeURIComponent(String(lat))}&lon=${encodeURIComponent(String(lon))}`);
+  } catch (error) {
+    console.error("Erro na API de reverse geocoding:", error);
+    throw error;
+  }
+}
+
+/** -------------------------
+ * Uploads & Anexos
+ * ------------------------- */
+
+export async function processarUploadsArquivos(arquivos: any[]): Promise<any[]> {
+  const resultados = await Promise.all(
+    arquivos.map(async (arquivo) => {
+      try {
+        if (arquivo.url) return { ...arquivo, url: arquivo.url };
+
+        // Se for data URL, converter para Blob/File
+        let file: File;
+        if (arquivo.data && typeof arquivo.data === "string" && arquivo.data.startsWith("data:")) {
+          const response = await fetch(arquivo.data);
+          const blob = await response.blob();
+          file = new File([blob], arquivo.name || `upload_${Date.now()}`, { type: arquivo.type || "application/octet-stream" });
+        } else {
+          file = arquivo;
+        }
+
+        const url = await uploadToCloudinary(file);
+        return { ...arquivo, url };
+      } catch (err) {
+        console.error("Erro no upload de arquivo:", err);
+        return { ...arquivo, url: undefined };
+      }
+    })
+  );
+
+  return resultados.filter(arquivo => arquivo.url);
+}
+
+export async function dataUrlParaFile(dataUrl: string, filename: string, type: string): Promise<File> {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  return new File([blob], filename, { type });
+}
+
+export function prepararAnexos(arquivos: any[], assinaturaDataUrl?: string, numeroOcorrencia?: string): any[] {
+  const anexos = arquivos
+    .filter(arquivo => arquivo.url)
+    .map(arquivo => {
+      const ext = (arquivo.name || "").split(".").pop()?.toLowerCase() || "";
+      const tipoArquivo = ext === "pdf" ? "arquivo" : "imagem";
+      return {
+        tipoArquivo,
+        urlArquivo: arquivo.url,
+        nomeArquivo: arquivo.name,
+        extensaoArquivo: ext,
+        descricao: arquivo.descricao || "",
+      };
+    });
+
+  if (assinaturaDataUrl) {
+    anexos.push({
+      tipoArquivo: "assinatura",
+      urlArquivo: assinaturaDataUrl,
+      nomeArquivo: `${numeroOcorrencia || 'ocorrencia'}_assinatura.png`,
+      extensaoArquivo: "png",
+      descricao: "Assinatura do responsável",
+    });
+  }
+
+  return anexos;
+}
+
+/** -------------------------
+ * Lesões (condições da vítima)
+ * ------------------------- */
+export async function fetchLesoes(): Promise<any[]> {
+  try {
+    return await requestJson(`${BASE_URL}/lesoes`);
+  } catch (error) {
+    console.error("Erro na API de lesões:", error);
+    return [];
+  }
+}
+
+/** -------------------------
+ * Utilitários de mapeamento
+ * ------------------------- */
+
+export function mapearStatusOcorrencia(status: string): string {
+  switch (status) {
+    case "Pendente":
+      return "pendente";
+    case "Em andamento":
+      return "em_andamento";
+    case "Concluída":
+      return "concluida";
+    case "Não Atendido":
+      return "nao_atendido";
+    default:
+      return String(status).toLowerCase().replace(/\s+/g, "_");
+  }
+}
+
+export function mapearSexo(sexo?: string): string | undefined {
+  if (!sexo) return undefined;
+  const low = sexo.toString().toLowerCase();
+  if (low.startsWith("m")) return "M";
+  if (low.startsWith("f")) return "F";
+  return "O";
+}
+
+/** -------------------------
+ * Heatmap helper (merge ocorrências + naturezas)
+ * ------------------------- */
+export async function fetchDadosHeatmap(periodo?: { inicio: string; fim: string }) {
+  try {
+    const [ocorrencias, naturezas] = await Promise.all([
+      fetchOcorrenciasComFiltro(periodo),
+      fetchNaturezasOcorrencias()
+    ]);
+
+    return {
+      ocorrencias: Array.isArray(ocorrencias) ? ocorrencias.map((o: any) => ({
+        id: o.id,
+        dataHora: o.dataHoraChamada || o.dataHora || new Date().toISOString(),
+        naturezaOcorrencia: o.naturezaOcorrencia,
+        localizacao: o.localizacao,
+      })) : [],
+      naturezas
+    };
+  } catch (error) {
+    console.error("Erro ao buscar dados do heatmap:", error);
+    return { ocorrencias: [], naturezas: [] };
+  }
+}

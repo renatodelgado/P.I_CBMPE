@@ -336,6 +336,36 @@ export const TeamChip = styled.div`
   }
 `;
 
+/* Novos componentes de layout para a seção "Equipe" */
+export const TeamSection = styled.div`
+  margin-bottom: 12px;
+`;
+
+export const TeamLabel = styled.label`
+  font-weight: 600;
+  color: #334155;
+  display: block;
+  margin-bottom: 6px;
+`;
+
+export const TeamColumns = styled.div`
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+`;
+
+export const TeamColumn = styled.div<{ minWidth?: number }>`
+  flex: 1;
+  min-width: ${(p) => (p.minWidth ? `${p.minWidth}px` : "220px")};
+  box-sizing: border-box;
+`;
+
+export const TeamPlaceholder = styled.div`
+  color: #64748b;
+  font-size: 14px;
+`;
+
 export const UploadArea = styled.div`
   border: 2px dashed #cbd5e1;
   border-radius: 10px;
@@ -898,5 +928,162 @@ export const SavedFilterCard = styled.div`
     font-size: 11px;
     color: #6b7280;
     margin-top: 2px;
+  }
+`;
+
+export const OcorrenciaCardsWrapper = styled.div`
+  margin-top: 12px;
+  display: grid;
+  /* mais denso para caber mais cards na tela */
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+`;
+
+export const OcorrenciaCard = styled.div`
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  border-left: 4px solid #e5e7eb;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  min-height: 84px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+  }
+`;
+
+/* Badge menor */
+export const StatusBadge = styled.span<{cor: string}>`
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: ${p => p.cor};
+`;
+
+/* labels/values menores para economizar espaço */
+export const CardLabel = styled.span`
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+`;
+
+export const CardValue = styled.span`
+  font-size: 13px;
+  color: #111827;
+  font-weight: 700;
+  margin-top: 2px;
+`;
+
+export const CardRow = styled.div`
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 8px;
+`;
+
+
+// NOVOS ESTILOS – não alteram os existentes
+export const DashboardLayout = styled.div`
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: 340px 1fr;
+  }
+
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const EnhancedOcorrenciaCard = styled(OcorrenciaCard)`
+  border-left: 5px solid ${p => p.color || '#e5e7eb'};
+  background: #ffffff;
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+  }
+`;
+
+export const CardHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+`;
+
+export const CardId = styled.div`
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e293b;
+`;
+
+export const CardDate = styled.div`
+  font-size: 0.85rem;
+  color: #64748b;
+  text-align: right;
+
+  strong {
+    display: block;
+    font-size: 1rem;
+    color: #1e293b;
+    margin-top: 2px;
+  }
+`;
+
+export const CardBody = styled.div`
+  margin: 0.75rem 0;
+`;
+
+export const CardInfoRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  strong {
+    color: #1e293b;
+    font-weight: 600;
+  }
+
+  small {
+    color: #64748b;
+  }
+`;
+
+export const CardFooter = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #e2e8f0;
+`;
+
+export const CardActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
+
+  button {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.75rem;
   }
 `;

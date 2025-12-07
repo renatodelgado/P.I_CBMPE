@@ -55,6 +55,9 @@ import {
 
 import { HeatmapOcorrenciasNatureza } from "../../components/Dashboard/HeatmapOcorrenciasNatureza";
 import { BellSimpleIcon, ChartBarIcon, FireIcon, XIcon } from "@phosphor-icons/react";
+import { fetchNaturezasOcorrencias, fetchOcorrencias } from "../../services/api";
+
+// Import das funções de API do novo arquivo
 
 // Section: Types
 type NaturezaOcorrencia = {
@@ -171,13 +174,12 @@ export function DashboardOperacional() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [ocorrenciasResp, naturezasResp] = await Promise.all([
-          fetch("https://backend-chama.up.railway.app/ocorrencias"),
-          fetch("https://backend-chama.up.railway.app/naturezasocorrencias"),
+        // Usando as funções importadas do api.ts
+        const [ocorrenciasData, naturezasData] = await Promise.all([
+          fetchOcorrencias(),
+          fetchNaturezasOcorrencias(),
         ]);
 
-        const [ocorrenciasData] = await Promise.all([ocorrenciasResp.json()]);
-        const naturezasData: NaturezaOcorrencia[] = await naturezasResp.json();
         setNaturezas(naturezasData);
 
         const mapped: Ocorrencia[] = Array.isArray(ocorrenciasData)

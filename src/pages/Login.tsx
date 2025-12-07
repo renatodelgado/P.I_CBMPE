@@ -21,19 +21,74 @@ import logoImg from "../assets/logo.svg";
 import userIcon from "../assets/clipboard.svg";
 import lockIcon from "../assets/lock.svg";
 import { useNavigate } from "react-router-dom";
+import { login as apiLogin } from "../services/api";
 
 export function Login() {
   const auth = useContext(AuthContext);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(true);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   if (!auth) return null;
 
-// const handleLogin = () => auth.login(username, password);
+ const handleLogin = async () => {
+    if (!auth) return;
 
-  const handleLogin = () => {
-    navigate("/dashboard");
+    if (!username.trim() || !password) {
+      alert("Preencha matrícula e senha");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await apiLogin(username.trim(), password);
+
+      const token = response?.token || response?.accessToken || response?.data?.token;
+      const usuario = response?.usuario || response?.user || response?.data?.usuario || response?.data || response;
+
+      if (!token || !usuario) {
+        alert("Falha no login: resposta inválida do servidor");
+        return;
+      }
+
+      auth.login(token, usuario, remember);
+      navigate("/dashboard", { replace: true });
+    } catch (err: unknown) {
+      console.error("Erro no login:", err);
+
+      const getErrorMessage = (error: unknown): string => {
+        // axios style error: error.response?.data?.message
+        if (
+          error &&
+          typeof error === "object" &&
+          "response" in error &&
+          (error).response &&
+          typeof (error).response === "object" &&
+          "data" in (error).response &&
+          (error).response.data &&
+          typeof (error).response.data === "object" &&
+          "message" in (error).response.data &&
+          typeof ((error).response.data).message === "string"
+        ) {
+          return ((error).response.data).message;
+        }
+
+        // generic Error object
+        if (error && typeof error === "object" && "message" in error && typeof (error).message === "string") {
+          return (error).message;
+        }
+
+        // fallback
+        return "Erro ao conectar ao servidor. Verifique sua internet.";
+      };
+
+      const msg = getErrorMessage(err);
+      alert("Erro no login: " + msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -71,9 +126,9 @@ export function Login() {
             </ContainerContent>
 
             <RememberMeForgotPassword>
-              <RememberMe>
+              <RememberMe onClick={() => setRemember(!remember)} style={{ cursor: "pointer" }}>
                 <Checkbox />
-                <p>Lembrar de mim</p>
+                <p style={{ marginLeft: 8 }}>{remember ? "Lembrar de mim" : "Não lembrar"}</p>
               </RememberMe>
               <ForgotPassword>
                 <p style={{ marginLeft: "auto" }}>
@@ -82,7 +137,9 @@ export function Login() {
               </ForgotPassword>
             </RememberMeForgotPassword>
 
-            <Button onClick={handleLogin}>Entrar</Button>
+            <Button onClick={handleLogin}>
+              {loading ? "Aguarde..." : "Entrar"}
+            </Button>
          </Wrapper>
        </DivLogin>
      </Background>

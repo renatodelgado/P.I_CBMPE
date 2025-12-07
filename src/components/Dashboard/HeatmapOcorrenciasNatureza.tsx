@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useMemo } from "react";
 import { MapContainer, TileLayer } from "react-leaflet";
 import HeatmapLayer from "./HeatmapLayer";
+import { fetchDadosHeatmap } from "../../services/api";
 
 type Natureza = {
   id: number;
@@ -30,32 +30,20 @@ export function HeatmapOcorrenciasNatureza({ periodo }: Props) {
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
   const [naturezaSelecionada, setNaturezaSelecionada] = useState<number | "">("");
 
-  // Busca naturezas e ocorrências
-  useEffect(() => {
+// Busca naturezas e ocorrências
+useEffect(() => {
   async function fetchData() {
     try {
-      const [ocorrenciasResp, naturezasResp] = await Promise.all([
-        fetch("https://backend-chama.up.railway.app/ocorrencias"),
-        fetch("https://backend-chama.up.railway.app/naturezasocorrencias"),
-      ]);
-
-      const [ocorrenciasData, naturezasData] = await Promise.all([
-        ocorrenciasResp.json(),
-        naturezasResp.json(),
-      ]);
-
-      setNaturezas(naturezasData);
-
-      const mapped = Array.isArray(ocorrenciasData)
-        ? ocorrenciasData.map((o: any) => ({
-            id: o.id,
-            dataHora: o.dataHoraChamada || o.dataHora || new Date().toISOString(),
-            naturezaOcorrencia: o.naturezaOcorrencia,
-            localizacao: o.localizacao,
-          }))
-        : [];
-
-      setOcorrencias(mapped);
+      const { ocorrencias: ocorrenciasData, naturezas: naturezasData } = await fetchDadosHeatmap(periodo);
+      
+      // Garantir que os itens recebidos respeitem o tipo Natureza (id: number, nome: string)
+      setNaturezas(
+        (naturezasData || []).map((n) => ({
+          id: n.id ?? 0,
+          nome: n.nome ?? "",
+        }))
+      );
+      setOcorrencias(ocorrenciasData);
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
     }

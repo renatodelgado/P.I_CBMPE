@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useMemo } from "react";
-import axios from "axios";
 import {
     ContainerPainel,
     PageTitle,
@@ -21,6 +20,9 @@ import {
 import { PlusIcon, PencilIcon, TrashIcon, DotsThreeIcon } from "@phosphor-icons/react";
 import { Button } from "../../components/Button";
 import { useNavigate } from "react-router-dom";
+
+// Import da função de API do api.ts
+import { fetchUsuarios } from "../../services/api";
 
 export function GestaoUsuarios() {
     const [usuarios, setUsuarios] = useState<any[]>([]);
@@ -43,11 +45,11 @@ export function GestaoUsuarios() {
 
     // Buscar usuários do backend
     useEffect(() => {
-        const fetchUsuarios = async () => {
+        const fetchUsuariosData = async () => {
             try {
-                const response = await axios.get("https://backend-chama.up.railway.app/users");
+                const data = await fetchUsuarios();
                 // mapear para o formato esperado na tabela
-                const mapped = response.data.map((u: any) => ({
+                const mapped = data.map((u: any) => ({
                     nome: u.nome,
                     email: u.email,
                     matricula: u.matricula,
@@ -59,14 +61,14 @@ export function GestaoUsuarios() {
                 }));
                 setUsuarios(mapped);
             } catch (error: any) {
-                console.error("Erro ao carregar usuários:", error.response?.data || error.message);
-                alert("Erro ao carregar usuários: " + (error.response?.data?.message || error.message));
+                console.error("Erro ao carregar usuários:", error);
+                alert("Erro ao carregar usuários: " + (error.message || "Erro desconhecido"));
             }
             finally {
                 setLoading(false);
             }
         };
-        fetchUsuarios();
+        fetchUsuariosData();
     }, []);
 
     // opções de filtros

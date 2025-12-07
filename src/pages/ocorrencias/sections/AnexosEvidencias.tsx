@@ -103,6 +103,35 @@ export function AnexosEvidencias(props: AnexosEvidenciasProps) {
     } catch {
       // ignore
     }
+
+    // salvar dataURL ao terminar de desenhar no canvas principal
+    const canvas = signatureCanvasRef.current;
+    if (canvas) {
+      try {
+        const ctx = canvas.getContext("2d");
+        let hasContent = false;
+        if (ctx) {
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          // verificar alpha de pixels para evitar canvas "em branco"
+          for (let i = 3; i < imgData.data.length; i += 4) {
+            if (imgData.data[i] !== 0) {
+              hasContent = true;
+              break;
+            }
+          }
+        }
+        if (hasContent) {
+          const dataURL = canvas.toDataURL("image/png");
+          props.setAssinaturaDataUrl(dataURL);
+        } else {
+          // se estiver vazio, garantir que o state não mantenha uma antiga assinatura
+          props.setAssinaturaDataUrl(undefined);
+        }
+      } catch (err) {
+        console.warn("Erro ao extrair assinatura do canvas:", err);
+      }
+    }
+
     setIsDrawing(false);
   };
 

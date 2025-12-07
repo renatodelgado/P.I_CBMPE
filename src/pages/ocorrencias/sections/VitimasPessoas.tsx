@@ -1,10 +1,12 @@
 // File: src/components/sections/VitimasPessoas.tsx
 import { useEffect, useState } from "react";
 import { UserIcon } from "@phosphor-icons/react";
-import axios from "axios";
 import { BoxInfo, SectionTitle, Grid, PersonCard, PersonCardHeader, PersonRemoveButton, Field, FullField } from "../../../components/EstilosPainel.styles";
 import { formatCPF } from "../../../utils/formatCPF";
 import { Button } from "../../../components/Button";
+
+// Import da função de API do api.ts
+import { fetchLesoes } from "../../../services/api";
 
 type Pessoa = {
   id: number;
@@ -34,10 +36,10 @@ export function VitimasPessoas(props: VitimasPessoasProps) {
   const [loadingCondicaoVitima, setLoadingCondicaoVitima] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchCondicaoVitima = async () => {
+    const fetchCondicaoVitimaData = async () => {
       try {
-        const response = await axios.get("https://backend-chama.up.railway.app/lesoes");
-        setCondicoesVitima(response.data);
+        const data = await fetchLesoes();
+        setCondicoesVitima(data);
       } catch (error) {
         console.error("Erro ao carregar condições da vítima:", error);
         alert("Erro ao carregar condições da vítima");
@@ -45,7 +47,7 @@ export function VitimasPessoas(props: VitimasPessoasProps) {
         setLoadingCondicaoVitima(false);
       }
     };
-    fetchCondicaoVitima();
+    fetchCondicaoVitimaData();
   }, []);
 
   return (

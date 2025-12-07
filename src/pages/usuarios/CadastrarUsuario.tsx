@@ -19,9 +19,11 @@ import {
 } from "../../components/EstilosPainel.styles";
 import { PerfilCard } from "../../components/NewUserPerfilCard/NewUserPerfilCards";
 import { Button } from "../../components/Button";
-import axios from "axios";
 import { formatCPF } from "../../utils/formatCPF";
 import { formatPhone } from "../../utils/formatPhone";
+
+// Import das funções de API do api.ts
+import { fetchPerfis, fetchUnidadesOperacionais, postUsuario } from "../../services/api";
 
 export function NovoUsuario() {
   const navigate = useNavigate();
@@ -44,13 +46,13 @@ export function NovoUsuario() {
   const [loadingPerfis, setLoadingPerfis] = useState(true);
 
   useEffect(() => {
-    const fetchPerfis = async () => {
+    const fetchPerfisData = async () => {
       try {
-        const response = await axios.get("https://backend-chama.up.railway.app/perfis");
+        const data = await fetchPerfis();
         // opcional: adicionar cores aos perfis
         const cores = ["#dc2625", "#f59e0b", "#3b82f6", "#10b981"];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const perfisComCor = response.data.map((p: any, idx: number) => ({
+        const perfisComCor = data.map((p: any, idx: number) => ({
           ...p,
           color: cores[idx % cores.length],
         }));
@@ -63,7 +65,7 @@ export function NovoUsuario() {
       }
     };
 
-    fetchPerfis();
+    fetchPerfisData();
   }, []);
 
 
@@ -73,10 +75,10 @@ export function NovoUsuario() {
   const [loadingUnidades, setLoadingUnidades] = useState(true);
 
   useEffect(() => {
-    const fetchUnidades = async () => {
+    const fetchUnidadesData = async () => {
       try {
-        const response = await axios.get("https://backend-chama.up.railway.app/unidadesoperacionais");
-        setUnidadesOperacionais(response.data);
+        const data = await fetchUnidadesOperacionais();
+        setUnidadesOperacionais(data);
       } catch (error) {
         console.error("Erro ao carregar unidades:", error);
         alert("Erro ao carregar unidades operacionais");
@@ -85,7 +87,7 @@ export function NovoUsuario() {
       }
     };
 
-    fetchUnidades();
+    fetchUnidadesData();
   }, []);
 
   const sanitizeEmail = (value: string) => {
@@ -118,18 +120,12 @@ export function NovoUsuario() {
     };
 
     try {
-      const response = await axios.post("https://backend-chama.up.railway.app/users", newUser);
-      console.log("✅ Usuário cadastrado com sucesso:", response.data);
+      const response = await postUsuario(newUser);
+      console.log("✅ Usuário cadastrado com sucesso:", response);
       alert("Usuário cadastrado com sucesso!");
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        console.error("❌ Erro ao cadastrar usuário:", error);
-        const remoteMessage = (error.response?.data as { message?: string } | undefined)?.message;
-        alert("Erro ao cadastrar usuário: " + (remoteMessage ?? error.message));
-      } else {
-        console.error("❌ Erro ao cadastrar usuário:", error);
-        alert("Erro ao cadastrar usuário: " + String(error));
-      }
+      console.error("❌ Erro ao cadastrar usuário:", error);
+      alert("Erro ao cadastrar usuário: " + String(error));
     }
   };
 

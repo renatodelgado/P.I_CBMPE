@@ -2,8 +2,10 @@
 // File: src/components/sections/DadosPrincipais.tsx
 import { useEffect, useState } from "react";
 import { FileTextIcon } from "@phosphor-icons/react";
-import axios from "axios";
 import { BoxInfo, SectionTitle, Grid, Field, FullField } from "../../../components/EstilosPainel.styles";
+
+// Import das funções de API do api.ts
+import { fetchNaturezasOcorrencias, fetchGruposOcorrencias, fetchSubgruposOcorrencias } from "../../../services/api";
 
 interface DadosPrincipaisProps {
   numeroOcorrencia: string;
@@ -29,23 +31,23 @@ interface DadosPrincipaisProps {
 
 export function DadosPrincipais(props: DadosPrincipaisProps) {
   const [naturezasOcorrencias, setNaturezasOcorrencias] = useState<
-    { id: number; nome: string; sigla: string; pontoBase: string }[]
+    { id?: number; nome?: string }[]
   >([]);
   const [loadingNaturezas, setLoadingNaturezas] = useState<boolean>(true);
   const [gruposOcorrencias, setGruposOcorrencias] = useState<
-    { naturezaOcorrencia: any; id: number; nome: string; }[]
+    { naturezaOcorrencia?: any; id?: number; nome?: string; }[]
   >([]);
   const [loadingGrupos, setLoadingGrupos] = useState<boolean>(true);
   const [subgruposOcorrencias, setSubgruposOcorrencias] = useState<
-    { grupoOcorrencia: any; id: number; nome: string; }[]
+    { grupoOcorrencia?: any; id?: number; nome?: string; }[]
   >([]);
   const [loadingSubgrupos, setLoadingSubgrupos] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchNaturezas = async () => {
+    const fetchNaturezasData = async () => {
       try {
-        const response = await axios.get("https://backend-chama.up.railway.app/naturezasocorrencias");
-        setNaturezasOcorrencias(response.data);
+        const data = await fetchNaturezasOcorrencias();
+        setNaturezasOcorrencias(data);
       } catch (error) {
         console.error("Erro ao carregar naturezas:", error);
         alert("Erro ao carregar naturezas de ocorrências");
@@ -53,14 +55,14 @@ export function DadosPrincipais(props: DadosPrincipaisProps) {
         setLoadingNaturezas(false);
       }
     };
-    fetchNaturezas();
+    fetchNaturezasData();
   }, []);
 
   useEffect(() => {
-    const fetchGrupos = async () => {
+    const fetchGruposData = async () => {
       try {
-        const response = await axios.get("https://backend-chama.up.railway.app/gruposocorrencias");
-        setGruposOcorrencias(response.data);
+        const data = await fetchGruposOcorrencias();
+        setGruposOcorrencias(data);
       } catch (error) {
         console.error("Erro ao carregar grupos de ocorrências:", error);
         alert("Erro ao carregar grupos de ocorrências");
@@ -68,14 +70,14 @@ export function DadosPrincipais(props: DadosPrincipaisProps) {
         setLoadingGrupos(false);
       }
     };
-    fetchGrupos();
+    fetchGruposData();
   }, []);
 
   useEffect(() => {
-    const fetchSubgrupos = async () => {
+    const fetchSubgruposData = async () => {
       try {
-        const response = await axios.get("https://backend-chama.up.railway.app/subgruposocorrencias");
-        setSubgruposOcorrencias(response.data);
+        const data = await fetchSubgruposOcorrencias();
+        setSubgruposOcorrencias(data);
       } catch (error) {
         console.error("Erro ao carregar subgrupos de ocorrências:", error);
         alert("Erro ao carregar subgrupos de ocorrências");
@@ -83,7 +85,7 @@ export function DadosPrincipais(props: DadosPrincipaisProps) {
         setLoadingSubgrupos(false);
       }
     };
-    fetchSubgrupos();
+    fetchSubgruposData();
   }, []);
 
   return (

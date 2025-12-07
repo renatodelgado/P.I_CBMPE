@@ -6,9 +6,11 @@ import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { BoxInfo, SectionTitle, Grid, Field, MapFullBox, MapPlaceholder } from "../../../components/EstilosPainel.styles";
-import { fetchBairrosFromOSM, fetchMunicipiosPE, type Municipio } from "../../../services/municipio_bairro";
 import { Button } from "../../../components/Button";
 
+// Import das funções de API do api.ts
+import { fetchMunicipiosPE, fetchBairrosFromOSM, fetchGeocode, fetchReverseGeocode } from "../../../services/api";
+import type { Municipio } from "../../../services/municipio_bairro";
 
 interface LocalizacaoProps {
   municipios: Municipio[];
@@ -65,7 +67,9 @@ export function Localizacao(props: LocalizacaoProps) {
       return;
     }
     fetchBairrosFromOSM(String(props.municipios.find((m) => m.id === props.selectedMunicipioId)?.nome))
-      .then(setBairros)
+      .then((data: any) => {
+        setBairros(data);
+      })
       .catch((err) => {
         console.error("Erro ao buscar distritos IBGE:", err);
         setBairros([]);
@@ -85,11 +89,7 @@ export function Localizacao(props: LocalizacaoProps) {
       const q = `${props.logradouro}, ${props.numero}, ${props.bairro}, ${municipioNome}, Pernambuco, Brazil`;
       setIsGeocoding(true);
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`
-        );
-        if (!res.ok) throw new Error(`Nominatim error: ${res.status}`);
-        const json = (await res.json()) as Array<{ lat: string; lon: string }>;
+        const json = await fetchGeocode(q);
         if (Array.isArray(json) && json.length > 0) {
           props.setLatitude(json[0].lat);
           props.setLongitude(json[0].lon);
@@ -116,19 +116,21 @@ export function Localizacao(props: LocalizacaoProps) {
         props.setLatitude(String(latitude));
         props.setLongitude(String(longitude));
         try {
-          const res = await fetch(
-            `https://backend-chama.up.railway.app/api/reverse-geocode?lat=${latitude}&lon=${longitude}`
-          );
-          if (!res.ok) throw new Error("Erro ao buscar endereço");
-          const data = await res.json();
+          const data = await fetchReverseGeocode(latitude, longitude);
           if (data.address) {
             props.setLogradouro(data.address.road || "");
             props.setNumero(data.address.house_number || "");
-            props.setBairro(data.address.suburb || "");
+            props.setBairro(data.address.suburb || data.address.neighbourhood || "");
             props.setComplemento("");
             props.setReferencia("");
-            props.setSelectedMunicipioNome(data.address.city || "");
-            const municipio = props.municipios.find((m) => m.nome === data.address.city);
+            props.setSelectedMunicipioNome(data.address.city || data.address.town || data.address.municipality || "");
+            
+            // Tentar encontrar o município pelo nome
+            const municipio = props.municipios.find((m) => 
+              m.nome.toLowerCase() === data.address.city?.toLowerCase() ||
+              m.nome.toLowerCase() === data.address.town?.toLowerCase() ||
+              m.nome.toLowerCase() === data.address.municipality?.toLowerCase()
+            );
             props.setSelectedMunicipioId(municipio ? municipio.id : "");
           }
           setForceManualLocationInput(false);
@@ -141,6 +143,7 @@ export function Localizacao(props: LocalizacaoProps) {
       (err) => {
         console.error("Erro ao obter localização:", err);
         setForceManualLocationInput(true);
+        alert("Não foi possível obter sua localização. Preencha os campos manualmente.");
       }
     );
   };
@@ -259,7 +262,8 @@ export function Localizacao(props: LocalizacaoProps) {
               </MapContainer>
             ) : (
               <MapPlaceholder>
-                Use o botão “Usar Localização” ou preencha os campos obrigatórios
+                Use o botão "Usar Localização" ou preencha os campos obrigatórios
+                {isGeocoding && " (buscando coordenadas...)"}
               </MapPlaceholder>
             )}
           </MapFullBox>
