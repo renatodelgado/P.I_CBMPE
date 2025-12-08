@@ -121,8 +121,8 @@ export function ListaOcorrencias() {
             // variantes comuns mapeadas para rótulos padronizados
             if (s.includes("pend")) return "Pendente";
             if (s.includes("andamento") || s.includes("em andamento")) return "Em andamento";
-            if (s.includes("atend") || s.includes("conclu")) return "Atendida";
-            if (s.includes("nao") || s.includes("nao_atend") || s.includes("nao atend") || s.includes("nao_atendida") || s.includes("nao_atendido")) return "Não Atendida";
+            if (s.includes("nao") || s.includes("nao_atend") || s.includes("nao atend") || s.includes("nao_atendida") || s.includes("Não") || s.includes("Não atendida") || s.includes("não atendida") || s.includes("nao_atendido")) return "Não Atendida";
+            if (s.includes("atendida") || s.includes("conclu")) return "Atendida";
             return "Desconhecido";
           };
 

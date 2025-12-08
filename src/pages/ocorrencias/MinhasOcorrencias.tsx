@@ -51,7 +51,7 @@ type FiltroSalvo = {
     values: typeof defaultFilters;
 };
 
-const STATUS_OPTIONS = ["Pendente", "Em andamento", "Concluída", "Não Atendida"];
+const STATUS_OPTIONS = ["Pendente", "Em andamento", "Atendida", "Não Atendida"];
 
 const defaultFilters = {
     periodoInicio: "",
@@ -166,7 +166,7 @@ export function MinhasOcorrencias(): JSX.Element {
             const statusReadable =
                 o.statusAtendimento === "pendente" ? "Pendente"
                     : o.statusAtendimento === "em_andamento" ? "Em andamento"
-                        : o.statusAtendimento === "concluida" ? "Concluída"
+                        : o.statusAtendimento === "concluida" ? "Atendida"
                             : o.statusAtendimento === "nao_atendido" ? "Não Atendida"
                                 : String(o.statusAtendimento || "Desconhecido");
 
@@ -322,7 +322,7 @@ export function MinhasOcorrencias(): JSX.Element {
                         total: ocorrencias.length,
                         pendente: ocorrencias.filter(o => o.status === "Pendente").length,
                         andamento: ocorrencias.filter(o => o.status === "Em andamento").length,
-                        concluida: ocorrencias.filter(o => o.status === "Concluída").length,
+                        atendida: ocorrencias.filter(o => o.status === "Atendida").length,
                         naoAtendida: ocorrencias.filter(o => o.status === "Não Atendida").length,
                     };
 
@@ -361,11 +361,11 @@ export function MinhasOcorrencias(): JSX.Element {
                             </AuditStatCard>
 
                             <AuditStatCard
-                                onClick={() => selectStatus('Concluída')}
-                                style={{ cursor: 'pointer', border: isSelectedStatus('Concluída') ? '2px solid #10B981' : undefined, boxShadow: isSelectedStatus('Concluída') ? '0 0 0 4px rgba(16,185,129,0.08)' : undefined }}
-                            >
-                                <h3>{counts.concluida}</h3><span>Concluídas</span>
-                            </AuditStatCard>
+                                        onClick={() => selectStatus('Atendida')}
+                                        style={{ cursor: 'pointer', border: isSelectedStatus('Atendida') ? '2px solid #10B981' : undefined, boxShadow: isSelectedStatus('Atendida') ? '0 0 0 4px rgba(16,185,129,0.08)' : undefined }}
+                                    >
+                                        <h3>{counts.atendida}</h3><span>Atendidas</span>
+                                    </AuditStatCard>
 
                             <AuditStatCard
                                 onClick={() => selectStatus('Não Atendida')}

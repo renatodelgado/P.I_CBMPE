@@ -858,7 +858,7 @@ export function NovaOcorrencia() {
                 }}>
                   <option>Pendente</option>
                   <option>Em andamento</option>
-                  <option>Concluída</option>
+                  <option>Atendida</option>
                   <option>Não Atendido</option>
                 </select>
               </Field>
