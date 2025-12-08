@@ -180,7 +180,11 @@ export function DashboardOperacional() {
           fetchNaturezasOcorrencias(),
         ]);
 
-        setNaturezas(naturezasData);
+        const naturezasMapped = naturezasData.map((n: any) => ({
+          id: String(n.id || "0"),
+          nome: n.nome,
+        }));
+        setNaturezas(naturezasMapped);
 
         const mapped: Ocorrencia[] = Array.isArray(ocorrenciasData)
           ? ocorrenciasData.map((o: any) => {
