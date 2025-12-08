@@ -36,7 +36,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 // Import das funções de API do api.ts
-import { fetchOcorrencias, fetchNaturezasOcorrencias, fetchRegioes } from "../../services/api";
+import { fetchOcorrencias, fetchNaturezasOcorrencias } from "../../services/api";
 
 interface FiltroSalvo {
   id: string;
@@ -70,19 +70,13 @@ export function ListaOcorrencias() {
 
   const [ocorrencias, setOcorrencias] = useState<any[]>([]);
 
-  const [regioesDisponiveis, setRegioesDisponiveis] = useState<string[]>([]);
+  const [localizacoesDisponiveis, setLocalizacoesDisponiveis] = useState<string[]>([]);
   const [naturezasOcorrencias, setNaturezasOcorrencias] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchOptions() {
       try {
-        // Usando as funções importadas do api.ts
-        const [regData, tipoData] = await Promise.all([
-          fetchRegioes(),
-          fetchNaturezasOcorrencias(),
-        ]);
-
-        setRegioesDisponiveis(regData.map((r: any) => r.nome)); // ajusta conforme seu JSON
+        const tipoData = await fetchNaturezasOcorrencias();
         setNaturezasOcorrencias(tipoData.map((t: any) => t.nome)); // ajusta conforme seu JSON
       } catch (err) {
         console.error("Erro ao buscar opções:", err);
@@ -153,13 +147,13 @@ export function ListaOcorrencias() {
 
         setOcorrencias(mapped);
 
-        // popula regioesDisponiveis a partir das localizacoes únicas presentes
+        // popula localizacoesDisponiveis a partir das localizacoes únicas presentes
         const uniqueLocs: string[] = Array.from(new Set(
           mapped
             .map((m: any) => m.localizacao)
             .filter((l: string) => l && l !== "Não informada")
-        )).map(String);
-        setRegioesDisponiveis(uniqueLocs);
+        )).map(String).sort();
+        setLocalizacoesDisponiveis(uniqueLocs);
       } catch (error) {
         console.error("Erro ao buscar ocorrências:", error);
       }
@@ -176,7 +170,7 @@ export function ListaOcorrencias() {
       const { periodoInicio, periodoFim, tipo, regiao, viatura, buscaLivre, status, natureza } = filters;
 
       const matchTipo = tipo === "todos" || ((o.tipo || "").toLowerCase() === tipo.toLowerCase());
-      const matchRegiao = regiao === "todas" || o.localizacao.toLowerCase().includes(regiao.toLowerCase());
+      const matchLocalizacao = regiao === "todas" || o.localizacao === regiao;
       const matchNatureza = natureza === "todos" || o.natureza.toLowerCase() === natureza.toLowerCase();
       const matchViatura = !viatura || o.viatura.toLowerCase().includes(viatura.toLowerCase());
       const matchBusca = !buscaLivre ||
@@ -198,7 +192,7 @@ export function ListaOcorrencias() {
         matchPeriodo = matchPeriodo && ts <= endTs;
       }
 
-      return matchTipo && matchRegiao && matchNatureza && matchViatura && matchBusca && matchPeriodo && matchStatus;
+      return matchTipo && matchLocalizacao && matchNatureza && matchViatura && matchBusca && matchPeriodo && matchStatus;
     });
   }, [ocorrencias, filters]);
 
@@ -397,15 +391,15 @@ const paginatedOcorrencias = useMemo(() => {
               </Field>
 
               <Field>
-                <label>Localização</label>
+                <label>Localização (Município - Bairro)</label>
                   <select
                     value={filters.regiao}
                     onChange={e => setFilters(f => ({ ...f, regiao: e.target.value }))}
                   >
                     <option value="todas">Todas</option>
-                    {regioesDisponiveis.map((r, index) => (
-                      <option key={`${r}-${index}`} value={r}>
-                        {r}
+                    {localizacoesDisponiveis.map((l, index) => (
+                      <option key={`${l}-${index}`} value={l}>
+                        {l}
                       </option>
                     ))}
                   </select>

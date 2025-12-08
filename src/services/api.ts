@@ -3,7 +3,7 @@
 
 import { uploadToCloudinary } from "../utils/uploadToCloudinary";
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "http://backendpicbmpe-production-d86d.up.railway.app";
 
 /** -------------------------
  * Tipagens básicas (podem ampliar conforme a API)
@@ -86,13 +86,40 @@ async function requestJson(url: string, options: RequestInit = {}, timeout = 300
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeout);
   try {
+    // build headers and inject Authorization if available
+    const baseHeaders: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(options.headers as Record<string, string> || {}),
+    };
+
+    // if body is FormData, don't force Content-Type (browser will set the correct multipart boundary)
+    if (options && (options.body as any) instanceof FormData) {
+      delete baseHeaders["Content-Type"];
+    }
+
+    // try to read token from localStorage (same key used by AuthContext)
+    try {
+      // prefer a runtime token exposed at window (set by AuthProvider) to support non-persistent logins
+      const runtimeToken = (window as any).__chama_token as string | undefined;
+      if (runtimeToken) {
+        baseHeaders["Authorization"] = `Bearer ${runtimeToken}`;
+      } else {
+        const raw = localStorage.getItem("chama_auth");
+        if (raw) {
+          const parsed = JSON.parse(raw) as { token?: string } | null;
+          if (parsed && parsed.token && !baseHeaders["Authorization"]) {
+            baseHeaders["Authorization"] = `Bearer ${parsed.token}`;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Não foi possível ler token de autenticação:", e);
+    }
+
     const res = await fetch(url, {
       ...options,
       signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-      },
+      headers: baseHeaders,
     });
     clearTimeout(id);
     if (!res.ok) {
@@ -541,5 +568,27 @@ export async function fetchDadosHeatmap(periodo?: { inicio: string; fim: string 
   } catch (error) {
     console.error("Erro ao buscar dados do heatmap:", error);
     return { ocorrencias: [], naturezas: [] };
+  }
+}
+
+/** -------------------------
+ * Get log auditoria
+ * ------------------------- */
+
+export async function fetchLogAuditoria(): Promise<any[]> {
+  try {
+    return await requestJson(`${BASE_URL}/audit`);
+  } catch (error) {
+    console.error("Erro na API de log de auditoria:", error);
+    return [];
+  }
+}
+
+export async function fetchLogAuditoriaPorUsuario(usuarioId: number): Promise<any[]> {
+  try {
+    return await requestJson(`${BASE_URL}/audit/user/${usuarioId}`);
+  } catch (error) {
+    console.error("Erro na API de log de auditoria por usuário:", error);
+    return [];
   }
 }

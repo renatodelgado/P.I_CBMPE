@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 import { useOnlineStatus } from "../utils/useOnlineStatus";
 import { uploadToCloudinary } from "../utils/uploadToCloudinary";
 import { processarUploadsArquivos, dataUrlParaFile, prepararAnexos, mapearStatusOcorrencia, postOcorrenciaComTimeout, fetchGeocodeCompleto, mapearSexo, postVitimaComTimeout } from "../services/api";
@@ -25,7 +26,8 @@ export function OfflineSync() {
     const isOnline = useOnlineStatus();
     const prevOnline = useRef(isOnline);
     const [drafts, setDrafts] = useState<any[]>([]);
-    const [usuarioLogado] = useState({ id: 64 });
+    const auth = useContext(AuthContext);
+    const usuarioLogadoId = (auth && auth.user && (auth.user as any).id) ? Number((auth.user as any).id) : undefined;
     const isSyncing = useRef(false);
     const syncAttempts = useRef(new Map());
     const lastSyncTime = useRef(0);
@@ -244,7 +246,7 @@ export function OfflineSync() {
                 descricao: finalDraft.descricao || "",
                 formaAcionamento: (finalDraft.formaAcionamento || "Telefone").toLowerCase(),
                 dataSincronizacao: new Date().toISOString(),
-                usuarioId: usuarioLogado.id,
+                usuarioId: usuarioLogadoId,
                 unidadeOperacionalId: finalDraft.unidade ? Number(finalDraft.unidade) : undefined,
                 naturezaOcorrenciaId: finalDraft.natureza ? Number(finalDraft.natureza) : undefined,
                 grupoOcorrenciaId: finalDraft.grupo ? Number(finalDraft.grupo) : undefined,

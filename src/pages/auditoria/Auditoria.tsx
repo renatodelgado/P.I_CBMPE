@@ -1,6 +1,6 @@
 import { MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { Button } from "../../components/Button";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   ContainerPainel,
   PageTopHeader,
@@ -23,8 +23,61 @@ import {
   FilterChipsContainer,
   TableWrapper,
 } from "../../components/EstilosPainel.styles";
-import { logs } from "../../assets/logs";
+import { fetchLogAuditoria } from "../../services/api";
 import { formatDate } from "../../utils/formatDate";
+
+type AuditLog = {
+  id: number;
+  timestamp: string;
+  acao: string;
+  recurso: string;
+  detalhes: unknown;
+  ip: string;
+  userAgent?: string;
+  justificativa?: string | null;
+  usuarioId?: number | null;
+};
+
+const parseLogDate = (value: string): Date | null => {
+  if (!value) return null;
+  const normalized = value.includes("T") ? value : value.replace(" ", "T");
+  const date = new Date(normalized);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatDateTime = (value: string) => {
+  const dt = parseLogDate(value);
+  if (!dt) return value || "-";
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "medium",
+  }).format(dt);
+};
+
+const parseDetalhes = (detalhes: unknown) => {
+  const raw = typeof detalhes === "string" ? detalhes : JSON.stringify(detalhes ?? "");
+  try {
+    const parsed = typeof detalhes === "string" ? JSON.parse(detalhes) : detalhes;
+    return {
+      parsed,
+      pretty: JSON.stringify(parsed, null, 2),
+      raw,
+    };
+  } catch {
+    return { parsed: null, pretty: raw, raw };
+  }
+};
+
+const buildUserOptions = (logs: AuditLog[]) => {
+  const map = new Map<string, string>();
+  logs.forEach((log) => {
+    const value = log.usuarioId != null ? String(log.usuarioId) : "desconhecido";
+    const labelBase = log.usuarioId ? `${log.usuarioId}` : `Usuário #${value}`;
+    const label = log.usuarioId != null ? `${labelBase} (#${value})` : labelBase;
+    map.set(value, label);
+  });
+  return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+};
 
 export function Auditoria() {
   const [periodFrom, setPeriodFrom] = useState("");
@@ -35,51 +88,104 @@ export function Auditoria() {
   const [searchText, setSearchText] = useState("");
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const pageSize = 10;
 
-  // Gera opções únicas para selects
-  const uniqueUsers = Array.from(new Set(logs.map((l) => l.user)));
-  const uniqueActions = Array.from(new Set(logs.map((l) => l.action)));
-  const uniqueResources = Array.from(new Set(logs.map((l) => l.resource)));
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchLogAuditoria();
+        if (!active) return;
+        setLogs(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!active) return;
+        console.error("Erro ao carregar logs de auditoria:", err);
+        setError("Não foi possível carregar os logs agora.");
+        setLogs([]);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
 
-  // Funções de filtro
-  const filteredLogs = logs.filter((log) => {
-    // Período
-    const logDate = new Date(log.timestamp.split(" ")[0].split("/").reverse().join("-"));
-    const fromDate = periodFrom ? new Date(periodFrom) : null;
-    const toDate = periodTo ? new Date(periodTo) : null;
-    if (fromDate && logDate < fromDate) return false;
-    if (toDate && logDate > toDate) return false;
+    load();
+    return () => {
+      active = false;
+    };
+  }, []);
 
-    // Usuário
-    if (user && log.user !== user) return false;
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [periodFrom, periodTo, user, eventType, resource, searchText]);
 
-    // Tipo de evento
-    if (eventType && log.action !== eventType) return false;
-
-    // Recurso
-    if (resource && log.resource !== resource) return false;
-
-    // Busca livre
-    if (
-      searchText &&
-      !(
-        log.id.toString().includes(searchText) ||
-        log.resource.toLowerCase().includes(searchText.toLowerCase()) ||
-        log.details.campo.toLowerCase().includes(searchText.toLowerCase())
-      )
-    )
-      return false;
-
-    return true;
-  });
-
-  // Paginação
-  const totalPages = Math.ceil(filteredLogs.length / pageSize);
-  const paginatedLogs = filteredLogs.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
+  const userOptions = useMemo(() => buildUserOptions(logs), [logs]);
+  const uniqueActions = useMemo(
+    () => Array.from(new Set(logs.map((l) => l.acao).filter(Boolean))),
+    [logs]
   );
+  const uniqueResources = useMemo(
+    () => Array.from(new Set(logs.map((l) => l.recurso).filter(Boolean))),
+    [logs]
+  );
+
+  const filteredLogs = useMemo(() => {
+    const fromDate = periodFrom ? new Date(`${periodFrom}T00:00:00`) : null;
+    const toDate = periodTo ? new Date(`${periodTo}T23:59:59.999`) : null;
+
+    return logs.filter((log) => {
+      const logDate = parseLogDate(log.timestamp);
+      if (fromDate && (!logDate || logDate < fromDate)) return false;
+      if (toDate && (!logDate || logDate > toDate)) return false;
+
+      const userValue = log.usuarioId != null ? String(log.usuarioId) : "desconhecido";
+      if (user && userValue !== user) return false;
+
+      if (eventType && log.acao !== eventType) return false;
+      if (resource && log.recurso !== resource) return false;
+
+      if (searchText) {
+        const detailsRaw = typeof log.detalhes === "string" ? log.detalhes : JSON.stringify(log.detalhes ?? "");
+        const blob = [
+          log.id,
+          log.recurso,
+          log.acao,
+          log.ip,
+          log.userAgent,
+          log.justificativa,
+          log.usuarioId,
+          detailsRaw,
+        ]
+          .map((v) => (v == null ? "" : String(v).toLowerCase()))
+          .join(" ");
+
+        if (!blob.includes(searchText.toLowerCase())) return false;
+      }
+
+      return true;
+    });
+  }, [logs, periodFrom, periodTo, user, eventType, resource, searchText]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedLogs = filteredLogs.slice(
+    (safePage - 1) * pageSize,
+    safePage * pageSize
+  );
+
+  const stats = useMemo(() => {
+    const uniqueUsersCount = new Set(logs.map((l) => (l.usuarioId != null ? String(l.usuarioId) : "desconhecido"))).size;
+    const creations = logs.filter((l) => (l.acao || "").toLowerCase().includes("create")).length;
+    const critical = logs.filter((l) => {
+      const a = (l.acao || "").toLowerCase();
+      return a.includes("delete") || a.includes("exclus") || a.includes("remove");
+    }).length;
+
+    return { total: logs.length, uniqueUsersCount, creations, critical };
+  }, [logs]);
 
   const handleCancel = () => {
     setPeriodFrom("");
@@ -88,6 +194,8 @@ export function Auditoria() {
     setEventType("");
     setResource("");
     setSearchText("");
+    setExpandedRow(null);
+    setCurrentPage(1);
   };
 
   const handleRemoveFilter = (key: string) => {
@@ -113,7 +221,7 @@ export function Auditoria() {
 
   const activeFilters = [
     periodFrom && periodTo ? { label: `Período: ${formatDate(new Date(periodFrom))} a ${formatDate(new Date(periodTo))}`, key: "period" } : null,
-    user ? { label: `Usuário: ${user}`, key: "user" } : null,
+    user ? { label: `Usuário: ${userOptions.find((u) => u.value === user)?.label || `#${user}`}`, key: "user" } : null,
     eventType ? { label: `Evento: ${eventType}`, key: "eventType" } : null,
     resource ? { label: `Recurso: ${resource}`, key: "resource" } : null,
     searchText ? { label: `Busca: "${searchText}"`, key: "searchText" } : null,
@@ -158,7 +266,9 @@ export function Auditoria() {
                 <label>Usuário</label>
                 <select value={user} onChange={(e) => setUser(e.target.value)}>
                   <option value="">Todos os usuários</option>
-                  {uniqueUsers.map((u) => <option key={u} value={u}>{u}</option>)}
+                  {userOptions.map((u) => (
+                    <option key={u.value} value={u.value}>{u.label}</option>
+                  ))}
                 </select>
               </Field>
 
@@ -225,20 +335,20 @@ export function Auditoria() {
           <BoxInfo>
             <MiniGrid>
               <AuditStatCard>
-                <h3>{logs.length}</h3>
-                <span>Total de Logs</span>
+                <h3>{loading ? "..." : stats.total}</h3>
+                <span>Total de logs</span>
               </AuditStatCard>
               <AuditStatCard>
-                <h3>{Array.from(new Set(logs.filter(l => l.action === "Login").map(l => l.user))).length}</h3>
-                <span>Logins Únicos</span>
+                <h3>{loading ? "..." : stats.uniqueUsersCount}</h3>
+                <span>Usuários únicos</span>
               </AuditStatCard>
               <AuditStatCard>
-                <h3>{logs.filter(l => l.action === "Edição").length}</h3>
-                <span>Modificações</span>
+                <h3>{loading ? "..." : stats.creations}</h3>
+                <span>Criações/novos registros</span>
               </AuditStatCard>
               <AuditStatCard>
-                <h3 style={{ color: "#dc2626" }}>{logs.filter(l => l.action === "Exclusão").length}</h3>
-                <span>Eventos Críticos</span>
+                <h3 style={{ color: "#dc2626" }}>{loading ? "..." : stats.critical}</h3>
+                <span>Eventos críticos</span>
               </AuditStatCard>
             </MiniGrid>
           </BoxInfo>
@@ -255,7 +365,7 @@ export function Auditoria() {
               <thead>
                 <tr>
                   <th>Timestamp</th>
-                  <th>Usuário</th>
+                  <th>Usuário (ID)</th>
                   <th>Ação</th>
                   <th>Recurso</th>
                   <th>IP</th>
@@ -263,46 +373,68 @@ export function Auditoria() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedLogs.map((log) => (
-                  <Fragment key={log.id}>
-                    <tr
-                      onClick={() =>
-                        setExpandedRow(expandedRow === log.id ? null : log.id)
-                      }
-                      style={{ cursor: "pointer" }}
-                    >
-                      <td>{log.timestamp}</td>
-                      <td>{log.user}</td>
-                      <td>{log.action}</td>
-                      <td>{log.resource}</td>
-                      <td>{log.ip}</td>
-                      <td>{expandedRow === log.id ? "▲" : "▼"}</td>
-                    </tr>
-                    {expandedRow === log.id && (
-                      <tr>
-                        <td colSpan={6}>
-                          <AuditDetailsBox>
-                            <p>
-                              <span className="campo">Campo alterado:</span>{" "}
-                              {log.details.campo}
-                            </p>
-                            <p>
-                              <span className="campo">Valor anterior:</span>{" "}
-                              {log.details.anterior} → <strong>{log.details.atual}</strong>
-                            </p>
-                            <p>
-                              <span className="campo">User Agent:</span> {log.details.userAgent}
-                            </p>
-                            <p>
-                              <span className="campo">Justificativa:</span>{" "}
-                              {log.details.justificativa}
-                            </p>
-                          </AuditDetailsBox>
-                        </td>
+                {loading && (
+                  <tr>
+                    <td colSpan={6}>Carregando logs...</td>
+                  </tr>
+                )}
+                {!loading && error && (
+                  <tr>
+                    <td colSpan={6}>{error}</td>
+                  </tr>
+                )}
+                {!loading && !error && paginatedLogs.length === 0 && (
+                  <tr>
+                    <td colSpan={6}>Nenhum registro encontrado</td>
+                  </tr>
+                )}
+                {!loading && !error && paginatedLogs.map((log) => {
+                  const userLabel = log.usuarioId
+                    ? `Usuário #${log.usuarioId}`
+                    : log.usuarioId != null
+                      ? `Usuário #${log.usuarioId}`
+                      : "Desconhecido";
+                  const detalhes = parseDetalhes(log.detalhes);
+
+                  return (
+                    <Fragment key={log.id}>
+                      <tr
+                        onClick={() =>
+                          setExpandedRow(expandedRow === log.id ? null : log.id)
+                        }
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td>{formatDateTime(log.timestamp)}</td>
+                        <td>{userLabel}</td>
+                        <td>{log.acao}</td>
+                        <td>{log.recurso}</td>
+                        <td>{log.ip}</td>
+                        <td>{expandedRow === log.id ? "▲" : "▼"}</td>
                       </tr>
-                    )}
-                  </Fragment>
-                ))}
+                      {expandedRow === log.id && (
+                        <tr>
+                          <td colSpan={6}>
+                            <AuditDetailsBox>
+                              <p>
+                                <span className="campo">User Agent:</span> {log.userAgent || "—"}
+                              </p>
+                              <p>
+                                <span className="campo">Justificativa:</span> {log.justificativa || "—"}
+                              </p>
+                              <p>
+                                <span className="campo">Usuário ID:</span> {log.usuarioId ?? "—"}
+                              </p>
+                              <p style={{ marginBottom: 6 }}>
+                                <span className="campo">Detalhes (JSON):</span>
+                              </p>
+                              <pre style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{detalhes.pretty}</pre>
+                            </AuditDetailsBox>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </Table>
             </TableWrapper>
@@ -311,15 +443,15 @@ export function Auditoria() {
             <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", marginTop: "1rem" }}>
               <Button
                 text="Anterior"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                onClick={() => setCurrentPage(Math.max(1, safePage - 1))}
                 variant="secondary"
               />
               <span style={{ alignSelf: "center" }}>
-                {currentPage} / {totalPages}
+                {safePage} / {totalPages}
               </span>
               <Button
                 text="Próximo"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                onClick={() => setCurrentPage(Math.min(totalPages, safePage + 1))}
                 variant="secondary"
               />
             </div>

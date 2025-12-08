@@ -35,6 +35,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (parsed && parsed.token) {
           setToken(parsed.token);
           setUser(parsed.user || null);
+          try {
+            // expose runtime token so services layer can read it when localStorage is not used
+            (window as unknown as Record<string, unknown>).__chama_token = parsed.token;
+          } catch {
+            // ignore
+          }
         }
       }
     } catch {
@@ -45,6 +51,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = (newToken: string, newUser: Usuario | null, remember = false) => {
     setToken(newToken);
     setUser(newUser || null);
+    try {
+      (window as unknown as Record<string, unknown>).__chama_token = newToken;
+    } catch { /* empty */ }
     if (remember) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: newToken, user: newUser }));
@@ -63,6 +72,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setToken(null);
     setUser(null);
+    try {
+      delete (window as unknown as Record<string, unknown>).__chama_token;
+    } catch { /* empty */ }
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {

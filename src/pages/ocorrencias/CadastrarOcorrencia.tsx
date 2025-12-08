@@ -2,7 +2,7 @@
 import { FileTextIcon, FireTruckIcon, /* GearIcon,*/ MapPinIcon, PaperclipIcon, UserIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { BoxInfo, SectionTitle, Grid, Field, FullField, ContainerPainel, GridColumn, ResponsiveRow, PageSubtitle, PageTitle, PageTopHeader, RequiredNotice, /* TeamSearchWrapper, TeamSearchInput, TeamResults, TeamBox, TeamChip, */ MapFullBox, MapPlaceholder, PersonCard, PersonCardHeader, PersonRemoveButton, UploadArea, Divider, PreviewList, SectionSubtitle, SignatureActions, SignatureBox, ModalContent, ModalOverlay, StatusAlert } from "../../components/EstilosPainel.styles";
 import { Breadcrumb } from "../../components/Breadcrumb";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useContext } from "react";
 import { fetchBairrosFromOSM, fetchMunicipiosPE, type Municipio } from "../../services/municipio_bairro";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import L from "leaflet";
@@ -12,6 +12,7 @@ import { useOnlineStatus } from "../../utils/useOnlineStatus";
 import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
 import axios from "axios";
 import { formatCPF } from "../../utils/formatCPF";
+import { AuthContext } from "../../context/AuthContext";
 
 export function NovaOcorrencia() {
   const isOnline = useOnlineStatus();
@@ -215,10 +216,8 @@ export function NovaOcorrencia() {
   console.log(assinaturaUrl, assinaturaDataUrl);
 
   const [eventoEspecial, setEventoEspecial] = useState(false);
-
-  const [usuarioLogado] = useState({
-    id: 64
-  });
+  const auth = useContext(AuthContext);
+  const usuarioLogado = auth?.user ?? null;
 
 
   type Pessoa = {
@@ -1485,7 +1484,7 @@ export function NovaOcorrencia() {
           <BoxInfo>
             <SectionTitle><ClipboardTextIcon size={22} weight="fill" /> Informações de Auditoria</SectionTitle>
             <Grid>
-              <Field><label>Atendente Responsável</label><input value={usuarioLogado.nome} readOnly /></Field>
+              <Field><label>Atendente Responsável</label><input value={usuarioLogado?.nome || ""} readOnly /></Field>
               <Field><label>Data/Hora do Registro</label><input value="29/09/2025 12:33" readOnly /></Field>
               <Field><label>IP de Origem</label><input value="192.167.2.100" readOnly /></Field>
             </Grid>
@@ -1592,7 +1591,7 @@ export function NovaOcorrencia() {
                     dataSincronizacao: new Date().toISOString(),
 
                     // usuário fixo conforme solicitado
-                    usuarioId: usuarioLogado.id,
+                    usuarioId: usuarioLogado?.id,
                     condicaoVitimaId: condicoesVitima.length > 0 ? Number(condicoesVitima[0]) : undefined,
                     unidadeOperacionalId: unidade ? Number(unidade) : undefined,
                     naturezaOcorrenciaId: natureza ? Number(natureza) : undefined,

@@ -1,7 +1,7 @@
 // File: src/components/NovaOcorrencia.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Breadcrumb } from "../../components/Breadcrumb";
 import { ContainerPainel, PageTopHeader, ResponsiveRow, GridColumn, PageTitle, PageSubtitle, RequiredNotice, StatusAlert } from "../../components/EstilosPainel.styles";
 import type { Municipio } from "../../services/municipio_bairro";
@@ -18,6 +18,7 @@ import { WarningCircleIcon } from "@phosphor-icons/react";
 // Import das funções de API do api.ts
 import { postOcorrencia, postVitima, postOcorrenciaUsuario } from "../../services/api";
 import type { Usuario } from "../../services/api";
+import { AuthContext } from "../../context/AuthContext";
 
 type Pessoa = {
     id: number;
@@ -69,7 +70,8 @@ export function CadastrarOcorrencia() {
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
     const [assinaturaDataUrl, setAssinaturaDataUrl] = useState<string | undefined>(undefined);
     const [eventoEspecial, setEventoEspecial] = useState(false);
-    const [usuarioLogado] = useState({ id: 64 });
+    const auth = useContext(AuthContext);
+    const usuarioLogado = auth?.user ?? null;
     const [numeroOcorrencia, setNumeroOcorrencia] = useState("");
 
     // Equipe / busca de usuários
@@ -353,7 +355,7 @@ export function CadastrarOcorrencia() {
                 descricao: descricao || "",
                 formaAcionamento: (formaAcionamento || "Telefone").toLowerCase(),
                 dataSincronizacao: new Date().toISOString(),
-                usuarioId: usuarioLogado.id,
+                usuarioId: usuarioLogado?.id,
                 unidadeOperacionalId: unidade ? Number(unidade) : undefined,
                 naturezaOcorrenciaId: natureza ? Number(natureza) : undefined,
                 grupoOcorrenciaId: grupo ? Number(grupo) : undefined,

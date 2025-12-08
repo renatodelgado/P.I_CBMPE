@@ -9,7 +9,7 @@ import { BoxInfo, SectionTitle, Grid, Field, MapFullBox, MapPlaceholder } from "
 import { Button } from "../../../components/Button";
 
 // Import das funções de API do api.ts
-import { fetchMunicipiosPE, fetchBairrosFromOSM, fetchGeocode, fetchReverseGeocode } from "../../../services/api";
+import { fetchMunicipiosPE, fetchBairrosFromOSM, fetchGeocode, fetchReverseGeocode, fetchOcorrencias } from "../../../services/api";
 import type { Municipio } from "../../../services/municipio_bairro";
 
 interface LocalizacaoProps {
@@ -59,6 +59,29 @@ export function Localizacao(props: LocalizacaoProps) {
     fetchMunicipiosPE()
       .then(props.setMunicipios)
       .catch((err) => console.error("Erro ao buscar municípios IBGE:", err));
+  }, []);
+
+  // buscar locais já usados nas ocorrências (municipio - bairro)
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const dados = await fetchOcorrencias();
+        if (!mounted || !Array.isArray(dados)) return;
+        const set = new Set<string>();
+        dados.forEach((o: any) => {
+          const muni = o?.localizacao?.municipio || o?.localizacao?.municipioNome || "";
+          const bai = o?.localizacao?.bairro || "";
+          if (muni || bai) {
+            const label = `${String(muni).trim()} - ${String(bai).trim()}`.trim();
+            if (label !== " - " && label !== "") set.add(label);
+          }
+        });
+      } catch (err) {
+        console.error("Erro ao buscar locais existentes:", err);
+      }
+    })();
+    return () => { mounted = false; };
   }, []);
 
   useEffect(() => {
@@ -154,6 +177,7 @@ export function Localizacao(props: LocalizacaoProps) {
       <Grid>
         <Field>
           <label className="required">Município</label>
+
           {props.municipios.length > 0 && !forceManualLocationInput ? (
             <select
               value={props.selectedMunicipioId}

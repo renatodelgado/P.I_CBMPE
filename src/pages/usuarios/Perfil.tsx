@@ -1,5 +1,5 @@
 // src/pages/Perfil/PerfilPage.tsx
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import {
   ContainerPainel,
   PageTitle,
@@ -129,7 +129,7 @@ export function PerfilPage() {
     return undefined;
   };
 
-  const getField = (keys: string[], source: Record<string, unknown> | null = auth?.user as Record<string, unknown> | null): unknown => {
+  const getField = useCallback((keys: string[], source: Record<string, unknown> | null = auth?.user as Record<string, unknown> | null): unknown => {
     if (!source) return null;
     for (const key of keys) {
       const direct = getFromObject(source, key);
@@ -148,7 +148,7 @@ export function PerfilPage() {
       }
     }
     return null;
-  };
+  }, [auth?.user]);
 
   // helper to read from `usuario` state (which may come from fetchUsuario or from auth.user)
   const getUsuarioField = (keys: string[]): unknown => {
@@ -193,7 +193,7 @@ export function PerfilPage() {
     };
 
     carregarPerfil();
-  }, [auth?.user]);
+  }, [auth?.user, getField]);
 
   if (loading) {
     return (

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -35,12 +35,12 @@ import {
 
 import { PlusIcon } from "@phosphor-icons/react";
 import { Button } from "../../components/Button";
+import { AuthContext } from "../../context/AuthContext";
 
 // API refatorada (certifique que getOcorrenciaPorId exista no seu api.ts)
 import {
     fetchOcorrenciasUsuario,
     fetchNaturezasOcorrencias,
-    fetchRegioes,
     fetchUsuario,
     getOcorrenciaPorId,
 } from "../../services/api";
@@ -66,7 +66,8 @@ const defaultFilters = {
 
 export function MinhasOcorrencias(): JSX.Element {
     const navigate = useNavigate();
-    const [usuarioLogadoId] = useState<number>(64); // fixo por enquanto
+    const auth = useContext(AuthContext);
+    const usuarioLogadoId = auth?.user?.id as number | undefined;
     const [usuarioLogado, setUsuarioLogado] = useState<any>(null);
 
     const [filters, setFilters] = useState(defaultFilters);
@@ -80,7 +81,7 @@ export function MinhasOcorrencias(): JSX.Element {
     const [rawOcorrencias, setRawOcorrencias] = useState<any[]>([]);
     const [ocorrencias, setOcorrencias] = useState<any[]>([]); // mapeadas / prontas para UI
 
-    const [regioesDisponiveis, setRegioesDisponiveis] = useState<string[]>([]);
+    const [localizacoesDisponiveis, setLocalizacoesDisponiveis] = useState<string[]>([]);
     const [naturezasOcorrencias, setNaturezasOcorrencias] = useState<string[]>([]);
 
     const [loading, setLoading] = useState(false);
@@ -97,6 +98,7 @@ export function MinhasOcorrencias(): JSX.Element {
         let mounted = true;
         (async () => {
             try {
+                if (!usuarioLogadoId) return;
                 const u = await fetchUsuario(usuarioLogadoId);
                 if (mounted) setUsuarioLogado(u);
             } catch (err) {
@@ -106,17 +108,13 @@ export function MinhasOcorrencias(): JSX.Element {
         return () => { mounted = false; };
     }, [usuarioLogadoId]);
 
-    // Carrega opções (regioes/naturezas)
+    // Carrega opções (naturezas)
     useEffect(() => {
         let mounted = true;
         (async () => {
             try {
-                const [regData, natData] = await Promise.all([
-                    fetchRegioes(),
-                    fetchNaturezasOcorrencias(),
-                ]);
+                const natData = await fetchNaturezasOcorrencias();
                 if (!mounted) return;
-                setRegioesDisponiveis(Array.isArray(regData) ? regData.map((r: any) => r.nome).filter(Boolean) : []);
                 setNaturezasOcorrencias(Array.isArray(natData) ? natData.map((n: any) => n.nome).filter(Boolean) : []);
             } catch (err) {
                 console.error("Erro ao buscar opções:", err);
@@ -133,6 +131,7 @@ export function MinhasOcorrencias(): JSX.Element {
 
         (async () => {
             try {
+                if (!usuarioLogadoId) return;
                 const data = await fetchOcorrenciasUsuario(usuarioLogadoId);
                 if (!mounted) return;
                 setRawOcorrencias(Array.isArray(data) ? data : []);
@@ -199,21 +198,18 @@ export function MinhasOcorrencias(): JSX.Element {
 
         setOcorrencias(mapped);
 
-        // popula regioesDisponiveis a partir das localizacoes únicas presentes (somente se vazio)
+        // popula localizacoesDisponiveis a partir das localizacoes únicas presentes
         const uniqueLocs: string[] = Array.from(new Set(
             mapped.map((m: any) => (m.localizacao || "")).filter((l: string) => l && l !== "Não informada")
-        )).map(String);
-        if (uniqueLocs.length > 0 && regioesDisponiveis.length === 0) {
-            setRegioesDisponiveis(uniqueLocs);
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        )).map(String).sort();
+        setLocalizacoesDisponiveis(uniqueLocs);
     }, [rawOcorrencias]);
 
     // Filtragem (mesma lógica que tinha, mas com origId e idLabel)
     const filteredOcorrencias = useMemo(() => {
         return ocorrencias.filter(o => {
             const { periodoInicio, periodoFim, regiao, viatura, buscaLivre, status, natureza } = filters;
-            const matchRegiao = regiao === "todas" || o.localizacao.toLowerCase().includes(regiao.toLowerCase());
+            const matchLocalizacao = regiao === "todas" || o.localizacao === regiao;
             const matchNatureza = natureza === "todos" || o.natureza.toLowerCase() === natureza.toLowerCase();
             const matchViatura = !viatura || o.viatura.toLowerCase().includes(viatura.toLowerCase());
             const matchBusca = !buscaLivre ||
@@ -234,7 +230,7 @@ export function MinhasOcorrencias(): JSX.Element {
                 matchPeriodo = matchPeriodo && ts <= endTs;
             }
 
-            return matchRegiao && matchNatureza && matchViatura && matchBusca && matchPeriodo && matchStatus;
+            return matchLocalizacao && matchNatureza && matchViatura && matchBusca && matchPeriodo && matchStatus;
         });
     }, [ocorrencias, filters]);
 
@@ -405,10 +401,10 @@ export function MinhasOcorrencias(): JSX.Element {
                             </Field>
 
                             <Field>
-                                <label>Localização</label>
+                                <label>Localização (Município - Bairro)</label>
                                 <select value={filters.regiao} onChange={e => setFilters(f => ({ ...f, regiao: e.target.value }))}>
                                     <option value="todas">Todas</option>
-                                    {regioesDisponiveis.map(r => <option key={r} value={r}>{r}</option>)}
+                                    {localizacoesDisponiveis.map(l => <option key={l} value={l}>{l}</option>)}
                                 </select>
                             </Field>
 
