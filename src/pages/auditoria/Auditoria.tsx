@@ -22,6 +22,8 @@ import {
   FilterChip,
   FilterChipsContainer,
   TableWrapper,
+  MobileCardWrapper,
+  MobileCard,
 } from "../../components/EstilosPainel.styles";
 import { fetchLogAuditoria } from "../../services/api";
 import { formatDate } from "../../utils/formatDate";
@@ -493,6 +495,42 @@ const filteredLogs = useMemo(() => {
               </tbody>
             </Table>
             </TableWrapper>
+
+            {/* Mobile cards (visible on small screens) */}
+            <MobileCardWrapper>
+              {paginatedLogs.map((log) => {
+                const displayName = buildUserDisplay(log);
+                const detalhes = parseDetalhes(log.detalhes);
+                const isExpanded = expandedRow === log.id;
+
+                return (
+                  <MobileCard key={log.id} onClick={() => setExpandedRow(isExpanded ? null : log.id)} style={{ cursor: 'pointer' }}>
+                    <div className="user-header">
+                      <div className="user-info">
+                        <strong>{displayName}</strong>
+                        <div className="email" style={{ fontSize: 12, color: '#64748b' }}>{formatDateTime(log.timestamp)}</div>
+                      </div>
+                    </div>
+
+                    <div className="user-details">
+                      <div className="detail"><span>Ação:</span> {log.acao || '—'}</div>
+                      <div className="detail"><span>Recurso:</span> {log.recurso || '—'}</div>
+                      <div className="detail"><span>IP:</span> {log.ip || '—'}</div>
+                      {isExpanded && (
+                        <>
+                          <div className="detail"><span>User Agent:</span> {log.userAgent || '—'}</div>
+                          <div className="detail"><span>Justificativa:</span> {log.justificativa || '—'}</div>
+                          <div className="detail"><span>Usuário ID:</span> {log.usuarioId ?? '—'}</div>
+                          <div className="detail"><span>Detalhes (JSON):</span>
+                            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginTop: 6 }}>{detalhes.pretty}</pre>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </MobileCard>
+                );
+              })}
+            </MobileCardWrapper>
 
             {/* Paginação */}
             <div style={{ display: "flex", justifyContent: "center", gap: "0.5rem", marginTop: "1rem" }}>
