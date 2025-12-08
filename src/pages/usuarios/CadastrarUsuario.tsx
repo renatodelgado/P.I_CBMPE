@@ -111,12 +111,12 @@ export function NovoUsuario() {
       nome,
       matricula,
       cpf: cpf.replace(/\D/g, ""),
-      patente,
-      funcao,
-      email,
+      patente: patente || null,
+      funcao: funcao || null,
+      email: email.trim(),
       senha: "123456",
-      perfilId: selectedPerfil?.id ?? null,
-      unidadeOperacionalId: unidade ? Number(unidade) : null,
+      perfil: selectedPerfil?.id ?? null,
+      unidadeOperacional: unidade ? Number(unidade) : null,
     };
 
     try {

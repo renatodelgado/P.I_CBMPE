@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { AuthProvider } from './context/AuthContext'
+import { prefetchStaticData } from './services/api'
 
 // Note: Do not clear localStorage on unload — keep persisted auth when 'remember' is used.
 
@@ -13,6 +14,14 @@ createRoot(document.getElementById('root')!).render(
     </AuthProvider>
   </StrictMode>,
 )
+
+// Prefetch static/cached API data to speed up pages that depend on them
+try {
+  // fire-and-forget; failures are non-fatal
+  prefetchStaticData().catch((e) => console.warn("prefetchStaticData falhou:", e));
+} catch (e) {
+  console.warn("prefetchStaticData falhou:", e);
+}
 
 // Desabilitar registro do service worker para evitar cache persistente
 // e limpar quaisquer service workers/caches já registrados.
@@ -50,7 +59,7 @@ if ("serviceWorker" in navigator) {
         try {
           navigator.serviceWorker.controller.postMessage({ type: "SKIP_WAITING" });
         } catch (e) {
-          // ignore
+          console.warn("[Chama SW] Falha ao enviar SKIP_WAITING:", e);
         }
         // reload to ensure fresh assets
         window.location.reload();

@@ -55,7 +55,7 @@ import {
 
 import { HeatmapOcorrenciasNatureza } from "../../components/Dashboard/HeatmapOcorrenciasNatureza";
 import { BellSimpleIcon, ChartBarIcon, FireIcon, XIcon } from "@phosphor-icons/react";
-import { fetchNaturezasOcorrencias, fetchOcorrencias } from "../../services/api";
+import { fetchNaturezasOcorrencias, fetchOcorrencias, normalizeStatusLabel } from "../../services/api";
 
 // Import das funções de API do novo arquivo
 
@@ -205,16 +205,7 @@ export function DashboardOperacional() {
               longitude: o.localizacao?.longitude,
               viatura: o.viatura ? `${o.viatura.tipo}-${o.viatura.numero}` : "Sem viatura",
               tipo: o.tipo?.nome || o.tipo || "N/A",
-              status:
-                o.statusAtendimento === "pendente"
-                  ? "Pendente"
-                  : o.statusAtendimento === "em_andamento"
-                    ? "Em andamento"
-                    : o.statusAtendimento === "concluida"
-                      ? "Concluída"
-                      : o.statusAtendimento === "nao_atendido"
-                        ? "Não Atendida"
-                        : "Desconhecido",
+              status: normalizeStatusLabel(o.statusAtendimento ?? o.status ?? o.status_atendimento),
               responsavel: o.usuario?.nome || "N/A",
               municipio: o.localizacao?.municipio || undefined,
             };

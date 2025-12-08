@@ -39,6 +39,17 @@ export function GestaoUsuarios() {
 
     const navigate = useNavigate();
 
+    const getInitials = (name?: string) => {
+        if (!name) return "US";
+        return String(name)
+            .split(" ")
+            .map(n => n[0])
+            .filter(Boolean)
+            .slice(0, 2)
+            .join("")
+            .toUpperCase();
+    };
+
     const handleLogin = () => {
         navigate("/usuarios/cadastrar");
     };
@@ -57,7 +68,7 @@ export function GestaoUsuarios() {
                     unidade: u.unidadeOperacional?.nome ?? "Sem unidade",
                     status: u.status ? "Ativo" : "Inativo",
                     ultimoAcesso: u.ultimoAcesso ?? "-",
-                    foto: u.foto ?? `https://i.pravatar.cc/50?img=${Math.floor(Math.random() * 70) + 1}`,
+                    foto: u.foto ?? undefined,
                 }));
                 setUsuarios(mapped);
             } catch (error: any) {
@@ -210,7 +221,22 @@ export function GestaoUsuarios() {
                                     {paginatedUsuarios.map((u, i) => (
                                         <tr key={i}>
                                             <td style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                                                <img src={u.foto} alt={u.nome} style={{ width: 40, height: 40, borderRadius: "50%" }} />
+                                                {u.foto ? (
+                                                    <img src={u.foto} alt={u.nome} style={{ width: 40, height: 40, borderRadius: "50%" }} />
+                                                ) : (
+                                                    <div style={{
+                                                        width: 40,
+                                                        height: 40,
+                                                        borderRadius: "50%",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        background: "#e2e8f0",
+                                                        color: "#0f172a",
+                                                        fontWeight: 700,
+                                                        fontSize: 14,
+                                                    }}>{getInitials(u.nome)}</div>
+                                                )}
                                                 <div style={{
                                                     display: "flex",
                                                     flexDirection: "column",
@@ -271,7 +297,11 @@ export function GestaoUsuarios() {
                             {filteredUsuarios.map((u, i) => (
                                 <MobileCard key={i}>
                                     <div className="user-header">
-                                        <img src={u.foto} alt={u.nome} />
+                                        {u.foto ? (
+                                            <img src={u.foto} alt={u.nome} />
+                                        ) : (
+                                            <div style={{ width: 48, height: 48, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "#e2e8f0", color: "#0f172a", fontWeight: 700 }}>{getInitials(u.nome)}</div>
+                                        )}
                                         <div className="user-info">
                                             <strong>{u.nome}</strong>
                                             <div className="email">{u.email}</div>

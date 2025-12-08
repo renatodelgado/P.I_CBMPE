@@ -54,8 +54,8 @@ const mapStatus = (s: string) => {
             return "pendente";
         case "Em andamento":
             return "em_andamento";
-        case "Concluída":
-            return "concluida";
+        case "Atendida":
+            return "atendida";
         case "Não Atendido":
             return "nao_atendido";
         default:

@@ -108,15 +108,15 @@ export function DadosPrincipais(props: DadosPrincipaisProps) {
           <label>Status de Atendimento</label>
           <select value={props.statusAtendimento} onChange={(e) => {
             props.setStatusAtendimento(e.target.value);
-            if (e.target.value !== "Não Atendido") props.setMotivoNaoAtendimento("");
+            if (e.target.value !== "Não Atendida") props.setMotivoNaoAtendimento("");
           }}>
             <option>Pendente</option>
             <option>Em andamento</option>
-            <option>Concluída</option>
-            <option>Não Atendido</option>
+            <option>Atendida</option>
+            <option>Não Atendida</option>
           </select>
         </Field>
-        {props.statusAtendimento === "Não Atendido" && (
+        {props.statusAtendimento === "Não Atendida" && (
           <FullField>
             <label>Motivo de Não Atendimento</label>
             <textarea

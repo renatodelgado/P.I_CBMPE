@@ -20,7 +20,7 @@ import {
 import logoImg from "../assets/logo.svg";
 import userIcon from "../assets/clipboard.svg";
 import lockIcon from "../assets/lock.svg";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { login as apiLogin } from "../services/api";
 
 export function Login() {
@@ -30,6 +30,7 @@ export function Login() {
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   if (!auth) return null;
 
@@ -54,7 +55,8 @@ export function Login() {
       }
 
       auth.login(token, usuario, remember);
-      navigate("/dashboard", { replace: true });
+      const redirectTo = (location.state as any)?.from || "/dashboard";
+      navigate(redirectTo, { replace: true });
     } catch (err: unknown) {
       console.error("Erro no login:", err);
 

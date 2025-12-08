@@ -36,6 +36,65 @@ type AuditLog = {
   userAgent?: string;
   justificativa?: string | null;
   usuarioId?: number | null;
+  userName?: string | null;
+};
+
+const extractUserNameFromDetails = (detalhes: unknown): string | null => {
+  try {
+    if (!detalhes) return null;
+
+    // ✅ Se vier como string, converter para objeto
+    const parsed =
+      typeof detalhes === "string" ? JSON.parse(detalhes) : detalhes;
+
+    if (!parsed || typeof parsed !== "object") return null;
+
+    const changes = (parsed as Record<string, unknown>).changes as Record<string, unknown>;
+    const after = changes?.after as Record<string, unknown> | undefined;
+    const usuario = after?.usuario as Record<string, unknown> | undefined;
+    const nome = usuario?.nome;
+
+    if (typeof nome === "string" && nome.trim()) {
+      return nome.trim();
+    }
+
+    return null;
+  } catch (e) {
+    console.warn("Falha ao extrair nome do usuário do audit log", e);
+    return null;
+  }
+};
+
+
+const getUserFilterKey = (log: AuditLog): string => {
+  if (log.userName) return `name:${log.userName}`;
+  if (log.usuarioId != null) return `id:${log.usuarioId}`;
+  return "unknown";
+};
+
+const buildUserDisplay = (log: AuditLog): string => {
+  if (log.userName) return log.userName;
+  if (log.usuarioId != null) return `Usuário #${log.usuarioId}`;
+  return "Desconhecido";
+};
+
+const buildUserOptions = (logs: AuditLog[]) => {
+  const map = new Map<string, string>();
+
+  logs.forEach((log) => {
+    if (log.userName) {
+      map.set(`name:${log.userName}`, log.userName);
+    } else if (log.usuarioId != null) {
+      const key = `id:${log.usuarioId}`;
+      map.set(key, `Usuário #${log.usuarioId}`);
+    } else {
+      map.set("unknown", "Desconhecido");
+    }
+  });
+
+  return Array.from(map.entries())
+    .map(([value, label]) => ({ value, label }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 };
 
 const parseLogDate = (value: string): Date | null => {
@@ -68,17 +127,6 @@ const parseDetalhes = (detalhes: unknown) => {
   }
 };
 
-const buildUserOptions = (logs: AuditLog[]) => {
-  const map = new Map<string, string>();
-  logs.forEach((log) => {
-    const value = log.usuarioId != null ? String(log.usuarioId) : "desconhecido";
-    const labelBase = log.usuarioId ? `${log.usuarioId}` : `Usuário #${value}`;
-    const label = log.usuarioId != null ? `${labelBase} (#${value})` : labelBase;
-    map.set(value, label);
-  });
-  return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
-};
-
 export function Auditoria() {
   const [periodFrom, setPeriodFrom] = useState("");
   const [periodTo, setPeriodTo] = useState("");
@@ -93,30 +141,36 @@ export function Auditoria() {
   const [error, setError] = useState<string | null>(null);
   const pageSize = 10;
 
-  useEffect(() => {
-    let active = true;
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await fetchLogAuditoria();
-        if (!active) return;
-        setLogs(Array.isArray(data) ? data : []);
-      } catch (err) {
-        if (!active) return;
-        console.error("Erro ao carregar logs de auditoria:", err);
-        setError("Não foi possível carregar os logs agora.");
-        setLogs([]);
-      } finally {
-        if (active) setLoading(false);
-      }
-    };
+ useEffect(() => {
+  let active = true;
+  const load = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchLogAuditoria();
+      if (!active) return;
 
-    load();
-    return () => {
-      active = false;
-    };
-  }, []);
+      const processedLogs: AuditLog[] = (Array.isArray(data) ? data : []).map((log: Omit<AuditLog, 'userName'>) => ({
+        ...log,
+        userName: extractUserNameFromDetails(log.detalhes),
+      }));
+
+      setLogs(processedLogs);
+    } catch (err) {
+      if (!active) return;
+      console.error("Erro ao carregar logs de auditoria:", err);
+      setError("Não foi possível carregar os logs agora.");
+      setLogs([]);
+    } finally {
+      if (active) setLoading(false);
+    }
+  };
+
+  load();
+  return () => {
+    active = false;
+  };
+}, []);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -132,42 +186,46 @@ export function Auditoria() {
     [logs]
   );
 
-  const filteredLogs = useMemo(() => {
-    const fromDate = periodFrom ? new Date(`${periodFrom}T00:00:00`) : null;
-    const toDate = periodTo ? new Date(`${periodTo}T23:59:59.999`) : null;
+const filteredLogs = useMemo(() => {
+  const fromDate = periodFrom ? new Date(`${periodFrom}T00:00:00`) : null;
+  const toDate = periodTo ? new Date(`${periodTo}T23:59:59.999`) : null;
 
-    return logs.filter((log) => {
-      const logDate = parseLogDate(log.timestamp);
-      if (fromDate && (!logDate || logDate < fromDate)) return false;
-      if (toDate && (!logDate || logDate > toDate)) return false;
+  return logs.filter((log) => {
+    const logDate = parseLogDate(log.timestamp);
+    if (fromDate && (!logDate || logDate < fromDate)) return false;
+    if (toDate && (!logDate || logDate > toDate)) return false;
 
-      const userValue = log.usuarioId != null ? String(log.usuarioId) : "desconhecido";
-      if (user && userValue !== user) return false;
+    // CORREÇÃO AQUI: usar a mesma chave do filtro
+    if (user) {
+      const currentKey = getUserFilterKey(log);
+      if (currentKey !== user) return false;
+    }
 
-      if (eventType && log.acao !== eventType) return false;
-      if (resource && log.recurso !== resource) return false;
+    if (eventType && log.acao !== eventType) return false;
+    if (resource && log.recurso !== resource) return false;
 
-      if (searchText) {
-        const detailsRaw = typeof log.detalhes === "string" ? log.detalhes : JSON.stringify(log.detalhes ?? "");
-        const blob = [
-          log.id,
-          log.recurso,
-          log.acao,
-          log.ip,
-          log.userAgent,
-          log.justificativa,
-          log.usuarioId,
-          detailsRaw,
-        ]
-          .map((v) => (v == null ? "" : String(v).toLowerCase()))
-          .join(" ");
+    if (searchText) {
+      const detailsRaw = typeof log.detalhes === "string" ? log.detalhes : JSON.stringify(log.detalhes ?? "");
+      const searchable = [
+        log.id,
+        log.recurso,
+        log.acao,
+        log.ip,
+        log.userAgent,
+        log.justificativa,
+        log.userName || "",
+        detailsRaw,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
 
-        if (!blob.includes(searchText.toLowerCase())) return false;
-      }
+      if (!searchable.includes(searchText.toLowerCase())) return false;
+    }
 
-      return true;
-    });
-  }, [logs, periodFrom, periodTo, user, eventType, resource, searchText]);
+    return true;
+  });
+}, [logs, periodFrom, periodTo, user, eventType, resource, searchText]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLogs.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
@@ -365,7 +423,7 @@ export function Auditoria() {
               <thead>
                 <tr>
                   <th>Timestamp</th>
-                  <th>Usuário (ID)</th>
+                  <th>Usuário</th>
                   <th>Ação</th>
                   <th>Recurso</th>
                   <th>IP</th>
@@ -389,28 +447,25 @@ export function Auditoria() {
                   </tr>
                 )}
                 {!loading && !error && paginatedLogs.map((log) => {
-                  const userLabel = log.usuarioId
-                    ? `Usuário #${log.usuarioId}`
-                    : log.usuarioId != null
-                      ? `Usuário #${log.usuarioId}`
-                      : "Desconhecido";
-                  const detalhes = parseDetalhes(log.detalhes);
+  const displayName = buildUserDisplay(log);
+  const detalhes = parseDetalhes(log.detalhes);
 
-                  return (
-                    <Fragment key={log.id}>
-                      <tr
-                        onClick={() =>
-                          setExpandedRow(expandedRow === log.id ? null : log.id)
-                        }
-                        style={{ cursor: "pointer" }}
-                      >
-                        <td>{formatDateTime(log.timestamp)}</td>
-                        <td>{userLabel}</td>
-                        <td>{log.acao}</td>
-                        <td>{log.recurso}</td>
-                        <td>{log.ip}</td>
-                        <td>{expandedRow === log.id ? "▲" : "▼"}</td>
-                      </tr>
+  return (
+    <Fragment key={log.id}>
+      <tr
+        onClick={() => setExpandedRow(expandedRow === log.id ? null : log.id)}
+        style={{ cursor: "pointer" }}
+      >
+        <td>{formatDateTime(log.timestamp)}</td>
+        <td>
+          <strong>{displayName}</strong>
+          {log.usuarioId != null && !log.userName && <small style={{opacity: 0.7}}> (ID: {log.usuarioId})</small>}
+        </td>
+        <td>{log.acao}</td>
+        <td>{log.recurso}</td>
+        <td>{log.ip}</td>
+        <td>{expandedRow === log.id ? "▲" : "▼"}</td>
+      </tr>
                       {expandedRow === log.id && (
                         <tr>
                           <td colSpan={6}>

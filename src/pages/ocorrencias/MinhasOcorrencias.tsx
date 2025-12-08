@@ -43,6 +43,7 @@ import {
     fetchNaturezasOcorrencias,
     fetchUsuario,
     getOcorrenciaPorId,
+    normalizeStatusLabel,
 } from "../../services/api";
 
 type FiltroSalvo = {
@@ -163,12 +164,8 @@ export function MinhasOcorrencias(): JSX.Element {
                 dataISO = dataObj.toISOString();
             }
 
-            const statusReadable =
-                o.statusAtendimento === "pendente" ? "Pendente"
-                    : o.statusAtendimento === "em_andamento" ? "Em andamento"
-                        : o.statusAtendimento === "concluida" ? "Atendida"
-                            : o.statusAtendimento === "nao_atendido" ? "Não Atendida"
-                                : String(o.statusAtendimento || "Desconhecido");
+            const statusRaw = o.statusAtendimento ?? o.status ?? o.status_atendimento;
+            const statusReadable = normalizeStatusLabel(statusRaw);
 
             return {
                 origId: o.id, // id numérico usado para GET /ocorrencias/:id
@@ -182,7 +179,7 @@ export function MinhasOcorrencias(): JSX.Element {
                 viatura: o.viatura ? `${o.viatura.tipo}-${o.viatura.numero}` : "Sem viatura",
                 status: statusReadable,
                 responsavel: o.usuario?.nome || "N/A",
-                isConcluida: o.statusAtendimento === "concluida",
+                isAtendida: statusReadable === "Atendida",
                 raw: o,
             };
         });
@@ -251,7 +248,7 @@ export function MinhasOcorrencias(): JSX.Element {
     const getStatusColor = (status: string) => {
         switch (status) {
             case "Em andamento": return "#3B82F6";
-            case "Concluída": return "#10B981";
+            case "Atendida": return "#10B981";
             case "Pendente": return "#EF4444";
             case "Não Atendida": return "#F59E0B";
             default: return "#6B7280";
@@ -314,7 +311,7 @@ export function MinhasOcorrencias(): JSX.Element {
             {/* Estatísticas */}
             <MiniGrid style={{ marginBottom: '1.5rem' }}>
                 {/*
-                  Tornamos os cards clicáveis: Total / Pendente / Em andamento / Concluída
+                  Tornamos os cards clicáveis: Total / Pendente / Em andamento / Atendida
                   E aplicamos um estilo simples quando estiverem selecionados.
                 */}
                 {(() => {

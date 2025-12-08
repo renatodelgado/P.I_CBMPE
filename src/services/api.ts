@@ -375,6 +375,110 @@ export async function fetchViaturas(): Promise<Viatura[]> {
   }
 }
 
+// -------------------------
+// Simple in-memory cache + prefetch helpers
+// -------------------------
+
+type CacheKey =
+  | "unidadesOperacionais"
+  | "naturezasOcorrencias"
+  | "gruposOcorrencias"
+  | "subgruposOcorrencias"
+  | "condicoesVitima"
+  | "viaturas";
+
+const cache = new Map<CacheKey, any>();
+
+export function getCached(key: CacheKey) {
+  return cache.has(key) ? cache.get(key) : null;
+}
+
+export function setCached(key: CacheKey, value: any) {
+  cache.set(key, value);
+}
+
+export async function prefetchStaticData(): Promise<void> {
+  try {
+    const [unidades, naturezas, grupos, subgrupos, condicoes, viaturasData] = await Promise.all([
+      fetchUnidadesOperacionais(),
+      fetchNaturezasOcorrencias(),
+      fetchGruposOcorrencias(),
+      fetchSubgruposOcorrencias(),
+      fetchLesoes(),
+      fetchViaturas(),
+    ]);
+
+    setCached("unidadesOperacionais", unidades);
+    setCached("naturezasOcorrencias", naturezas);
+    setCached("gruposOcorrencias", grupos);
+    setCached("subgruposOcorrencias", subgrupos);
+    setCached("condicoesVitima", condicoes);
+    setCached("viaturas", viaturasData);
+
+    // small console hint for debugging
+    if (typeof window !== "undefined") {
+      console.info("API prefetch concluído: itens em cache carregados.");
+    }
+  } catch (err) {
+    console.warn("Falha no prefetchStaticData:", err);
+  }
+}
+
+// Wrappers that prefer cached values and fall back to network
+export async function getUnidadesOperacionais(): Promise<any[]> {
+  const k: CacheKey = "unidadesOperacionais";
+  const cached = getCached(k);
+  if (cached) return cached;
+  const fresh = await fetchUnidadesOperacionais();
+  setCached(k, fresh);
+  return fresh;
+}
+
+export async function getNaturezasOcorrencias(): Promise<NaturezaOcorrencia[]> {
+  const k: CacheKey = "naturezasOcorrencias";
+  const cached = getCached(k);
+  if (cached) return cached;
+  const fresh = await fetchNaturezasOcorrencias();
+  setCached(k, fresh);
+  return fresh;
+}
+
+export async function getGruposOcorrencias(): Promise<any[]> {
+  const k: CacheKey = "gruposOcorrencias";
+  const cached = getCached(k);
+  if (cached) return cached;
+  const fresh = await fetchGruposOcorrencias();
+  setCached(k, fresh);
+  return fresh;
+}
+
+export async function getSubgruposOcorrencias(): Promise<any[]> {
+  const k: CacheKey = "subgruposOcorrencias";
+  const cached = getCached(k);
+  if (cached) return cached;
+  const fresh = await fetchSubgruposOcorrencias();
+  setCached(k, fresh);
+  return fresh;
+}
+
+export async function getCondicoesVitima(): Promise<any[]> {
+  const k: CacheKey = "condicoesVitima";
+  const cached = getCached(k);
+  if (cached) return cached;
+  const fresh = await fetchLesoes();
+  setCached(k, fresh);
+  return fresh;
+}
+
+export async function getViaturas(): Promise<Viatura[]> {
+  const k: CacheKey = "viaturas";
+  const cached = getCached(k);
+  if (cached) return cached;
+  const fresh = await fetchViaturas();
+  setCached(k, fresh);
+  return fresh;
+}
+
 /** -------------------------
  * Regiões / IBGE / OSM
  * ------------------------- */
@@ -435,9 +539,22 @@ export async function fetchGeocodeCompleto(query: string): Promise<any[]> {
 export async function fetchReverseGeocode(lat: number, lon: number): Promise<any> {
   try {
     return await requestJson(`${BASE_URL}/api/reverse-geocode?lat=${encodeURIComponent(String(lat))}&lon=${encodeURIComponent(String(lon))}`);
-  } catch (error) {
-    console.error("Erro na API de reverse geocoding:", error);
-    throw error;
+  } catch (err) {
+    console.warn("Backend reverse-geocode falhou, tentando Nominatim fallback:", err);
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(String(lat))}&lon=${encodeURIComponent(String(lon))}&addressdetails=1`;
+      // Nominatim exige um User-Agent; fetch in browser will send one, but be polite with a referer via headers if needed.
+      const res = await fetch(url, { headers: { "Accept": "application/json" } });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Nominatim error ${res.status} ${res.statusText} - ${text}`);
+      }
+      const json = await res.json();
+      return json;
+    } catch (err2) {
+      console.error("Fallback Nominatim reverse-geocode também falhou:", err2);
+      throw err2;
+    }
   }
 }
 
@@ -524,18 +641,38 @@ export async function fetchLesoes(): Promise<any[]> {
  * ------------------------- */
 
 export function mapearStatusOcorrencia(status: string): string {
-  switch (status) {
-    case "Pendente":
-      return "pendente";
-    case "Em andamento":
-      return "em_andamento";
-    case "Concluída":
-      return "concluida";
-    case "Não Atendido":
-      return "nao_atendido";
-    default:
-      return String(status).toLowerCase().replace(/\s+/g, "_");
-  }
+  // normaliza entrada (remove diacríticos, lowercase)
+  if (status === null || status === undefined) return "";
+  const s = String(status).toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
+
+  // diversas formas que podem aparecer no banco ou UI
+  if (s.includes("pend")) return "pendente"; // pendente, pend
+  if (s.includes("em andamento") || s.includes("em_andamento") || s.includes("andament") || s.includes("em-andamento") || s.includes("in_progress") || s.includes("andamento")) return "em_andamento";
+
+  // atendida / concluida / finalizada -> mapear para "atendida"
+  if (s.includes("atend") || s.includes("atendida") || s.includes("atendido") || s.includes("conclu") || s.includes("concluida") || s.includes("concluida")) return "atendida";
+
+  // não atendida / nao atendido / nao_atendido -> mapear para nao_atendido
+  if (s.includes("nao") && s.includes("atend")) return "nao_atendido";
+  if (s.includes("nao_atend") || s.includes("nao_atendido") || s.includes("nao_atendida") || s.includes("nao-atendido") || s.includes("nao atendida")) return "nao_atendido";
+
+  // fallback: transformar em snake_case sem diacríticos
+  return s.replace(/\s+/g, "_");
+}
+
+/**
+ * Normaliza um valor de status vindo do backend para um rótulo exibível na UI.
+ * Retorna um dos: "Pendente", "Em andamento", "Atendida", "Não Atendida", ou "Desconhecido".
+ */
+export function normalizeStatusLabel(raw: any): string {
+  if (raw === null || raw === undefined) return "Desconhecido";
+  const s = String(raw).toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
+  if (s.includes("pend")) return "Pendente";
+  if (s.includes("em andamento") || s.includes("em_andamento") || s.includes("andament") || s.includes("in_progress")) return "Em andamento";
+  if (s.includes("nao") && s.includes("atend")) return "Não Atendida";
+  if (s.includes("nao_atend") || s.includes("nao_atendido") || s.includes("nao_atendida")) return "Não Atendida";
+  if (s.includes("atend") || s.includes("conclu") || s.includes("finaliz") || s.includes("resolv")) return "Atendida";
+  return "Desconhecido";
 }
 
 export function mapearSexo(sexo?: string): string | undefined {

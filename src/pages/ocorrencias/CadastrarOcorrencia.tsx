@@ -10,9 +10,10 @@ import "leaflet/dist/leaflet.css";
 import { Button } from "../../components/Button";
 import { useOnlineStatus } from "../../utils/useOnlineStatus";
 import { uploadToCloudinary } from "../../utils/uploadToCloudinary";
-import axios from "axios";
+import { getViaturas, getUnidadesOperacionais, getNaturezasOcorrencias, getGruposOcorrencias, getSubgruposOcorrencias, getCondicoesVitima, fetchReverseGeocode } from "../../services/api";
 import { formatCPF } from "../../utils/formatCPF";
 import { AuthContext } from "../../context/AuthContext";
+import axios from "axios";
 
 export function NovaOcorrencia() {
   const isOnline = useOnlineStatus();
@@ -86,7 +87,7 @@ export function NovaOcorrencia() {
   const [offlineOccurrences, setOfflineOccurrences] = useState<any[]>([]);
 
   const [naturezasOcorrencias, setNaturezasOcorrencias] = useState<
-    { id: number; nome: string; sigla: string; pontoBase: string }[]
+    { id: number; nome: string }[]
   >([]);
   const [natureza, setNatureza] = useState("");
   const [loadingNaturezas, setLoadingNaturezas] = useState<boolean>(true);
@@ -378,8 +379,8 @@ export function NovaOcorrencia() {
   useEffect(() => {
     const fetchViaturas = async () => {
       try {
-        const response = await axios.get("https://backend-chama.up.railway.app/viaturas");
-        setViaturas(response.data);
+        const data = await getViaturas();
+        setViaturas(data || []);
       } catch (error) {
         console.error("Erro ao carregar viaturas:", error);
         alert("Erro ao carregar viaturas");
@@ -395,8 +396,8 @@ export function NovaOcorrencia() {
   useEffect(() => {
     const fetchUnidades = async () => {
       try {
-        const response = await axios.get("https://backend-chama.up.railway.app/unidadesoperacionais");
-        setUnidadesOperacionais(response.data);
+        const data = await getUnidadesOperacionais();
+        setUnidadesOperacionais(data || []);
       } catch (error) {
         console.error("Erro ao carregar unidades:", error);
         alert("Erro ao carregar unidades operacionais");
@@ -411,8 +412,8 @@ export function NovaOcorrencia() {
   useEffect(() => {
     const fetchNaturezas = async () => {
       try {
-        const response = await axios.get("https://backend-chama.up.railway.app/naturezasocorrencias");
-        setNaturezasOcorrencias(response.data);
+        const data = await getNaturezasOcorrencias();
+        setNaturezasOcorrencias((data || []).filter((item): item is { id: number; nome: string } => item.id !== undefined));
       } catch (error) {
         console.error("Erro ao carregar naturezas:", error);
         alert("Erro ao carregar naturezas de ocorrências");
@@ -427,8 +428,8 @@ export function NovaOcorrencia() {
   useEffect(() => {
     const fetchGrupos = async () => {
       try {
-        const response = await axios.get("https://backend-chama.up.railway.app/gruposocorrencias");
-        setGruposOcorrencias(response.data);
+        const data = await getGruposOcorrencias();
+        setGruposOcorrencias(data || []);
       } catch (error) {
         console.error("Erro ao carregar grupos de ocorrências:", error);
         alert("Erro ao carregar grupos de ocorrências");
@@ -443,8 +444,8 @@ export function NovaOcorrencia() {
   useEffect(() => {
     const fetchSubgrupos = async () => {
       try {
-        const response = await axios.get("https://backend-chama.up.railway.app/subgruposocorrencias");
-        setSubgruposOcorrencias(response.data);
+        const data = await getSubgruposOcorrencias();
+        setSubgruposOcorrencias(data || []);
       } catch (error) {
         console.error("Erro ao carregar subgrupos de ocorrências:", error);
         alert("Erro ao carregar subgrupos de ocorrências");
@@ -459,8 +460,8 @@ export function NovaOcorrencia() {
   useEffect(() => {
     const fetchCondicaoVitima = async () => {
       try {
-        const response = await axios.get("https://backend-chama.up.railway.app/lesoes");
-        setCondicoesVitima(response.data);
+        const data = await getCondicoesVitima();
+        setCondicoesVitima(data || []);
       } catch (error) {
         console.error("Erro ao carregar condições da vítima:", error);
         alert("Erro ao carregar condições da vítima");
@@ -742,25 +743,23 @@ export function NovaOcorrencia() {
         setLongitude(String(longitude));
 
         try {
-          const res = await fetch(
-            `https://backend-chama.up.railway.app/api/reverse-geocode?lat=${latitude}&lon=${longitude}`
-          );
+          const data = await fetchReverseGeocode(Number(latitude), Number(longitude));
 
-          if (!res.ok) throw new Error("Erro ao buscar endereço");
-
-          const data = await res.json();
-
-          // Preencher campos de endereço automaticamente
-          if (data.address) {
-            setLogradouro(data.address.road || "");
-            setNumero(data.address.house_number || "");
-            setBairro(data.address.suburb || "");
-            setComplemento(""); // pode usar referência se quiser
-            setReferencia(""); // opcional, você pode extrair de data.display_name se desejar
-            setSelectedMunicipioNome(data.address.city || "");
-            // se você tiver ID do município no frontend, pode mapear pelo nome
-            const municipio = municipios.find((m) => m.nome === data.address.city);
+          // Preencher campos de endereço automaticamente (suporta formatos do backend e do Nominatim)
+          const addr = data?.address || data?.result?.address || null;
+          if (addr) {
+            setLogradouro(addr.road || addr.road_name || addr.pedestrian || addr.footway || "");
+            setNumero(addr.house_number || addr.housenumber || "");
+            setBairro(addr.suburb || addr.quarter || addr.neighbourhood || addr.village || addr.town || "");
+            setComplemento("");
+            setReferencia("");
+            const city = addr.city || addr.town || addr.village || addr.county || addr.state || "";
+            setSelectedMunicipioNome(city);
+            const municipio = municipios.find((m) => m.nome === city);
             setSelectedMunicipioId(municipio ? municipio.id : "");
+          } else if (data && typeof data.display_name === "string") {
+            // fallback básico: popular municipio com parte do display_name
+            setSelectedMunicipioNome(String(data.display_name).split(",")[0] || "");
           }
 
           setForceManualLocationInput(false);
@@ -854,16 +853,16 @@ export function NovaOcorrencia() {
                 <label>Status de Atendimento</label>
                 <select value={statusAtendimento} onChange={(e) => {
                   setStatusAtendimento(e.target.value);
-                  if (e.target.value !== "Não Atendido") setMotivoNaoAtendimento("");
+                  if (e.target.value !== "Não Atendida") setMotivoNaoAtendimento("");
                 }}>
                   <option>Pendente</option>
                   <option>Em andamento</option>
                   <option>Atendida</option>
-                  <option>Não Atendido</option>
+                  <option>Não Atendida</option>
                 </select>
               </Field>
 
-              {statusAtendimento === "Não Atendido" && (
+              {statusAtendimento === "Não Atendida" && (
                 <FullField>
                   <label>Motivo de Não Atendimento</label>
                   <textarea
@@ -1568,13 +1567,13 @@ export function NovaOcorrencia() {
                   const mapStatus = (s: string) => {
                     switch (s) {
                       case "Pendente":
-                        return "pendente";
+                        return "Pendente";
                       case "Em andamento":
-                        return "em_andamento";
-                      case "Concluída":
-                        return "concluida";
-                      case "Não Atendido":
-                        return "nao_atendido";
+                        return "Em andamento";
+                      case "Atendida":
+                        return "Atendida";
+                      case "Não Atendida":
+                        return "Não Atendida";
                       default:
                         return String(s).toLowerCase().replace(/\s+/g, "_");
                     }

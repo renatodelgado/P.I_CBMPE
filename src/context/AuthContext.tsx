@@ -1,6 +1,6 @@
 
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState } from "react";
 import type { ReactNode } from "react";
 
 type Usuario = {
@@ -23,34 +23,38 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const STORAGE_KEY = "chama_auth";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<Usuario | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-
-  // load persisted auth (if any)
-  useEffect(() => {
+  // Inicializa estado de auth a partir do localStorage SINCRO- NAMENTE
+  // para evitar flashes de rota não-autenticada durante o primeiro render.
+  const initial = (() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as { token?: string; user?: Usuario } | null;
         if (parsed && parsed.token) {
-          setToken(parsed.token);
-          setUser(parsed.user || null);
           try {
-            // expose runtime token so services layer can read it when localStorage is not used
             (window as unknown as Record<string, unknown>).__chama_token = parsed.token;
           } catch {
             // ignore
           }
+          return { token: parsed.token || null, user: parsed.user || null };
         }
       }
     } catch {
       // ignore parse errors
     }
-  }, []);
+    return { token: null as string | null, user: null as Usuario | null };
+  })();
+
+  const [userState, setUserState] = useState<Usuario | null>(initial.user);
+  const [tokenState, setTokenState] = useState<string | null>(initial.token);
+
+  // keep original names for rest of file
+  const user = userState;
+  const token = tokenState;
 
   const login = (newToken: string, newUser: Usuario | null, remember = false) => {
-    setToken(newToken);
-    setUser(newUser || null);
+    setTokenState(newToken);
+    setUserState(newUser || null);
     try {
       (window as unknown as Record<string, unknown>).__chama_token = newToken;
     } catch { /* empty */ }
@@ -70,8 +74,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    setToken(null);
-    setUser(null);
+    setTokenState(null);
+    setUserState(null);
     try {
       delete (window as unknown as Record<string, unknown>).__chama_token;
     } catch { /* empty */ }
