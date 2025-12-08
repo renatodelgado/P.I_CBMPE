@@ -3,7 +3,7 @@
 
 import { uploadToCloudinary } from "../utils/uploadToCloudinary";
 
-const BASE_URL = "http://backendpicbmpe-production-d86d.up.railway.app";
+const BASE_URL = "https://backendpicbmpe-production-d86d.up.railway.app";
 
 /** -------------------------
  * Tipagens básicas (podem ampliar conforme a API)
