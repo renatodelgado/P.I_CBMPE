@@ -44,7 +44,7 @@ interface FiltroSalvo {
   values: typeof defaultFilters;
 }
 
-const STATUS_OPTIONS = ["Pendente", "Em andamento", "Concluída", "Não Atendida"];
+const STATUS_OPTIONS = ["Pendente", "Em andamento", "Atendida", "Não Atendida"];
 
 const defaultFilters = {
   periodoInicio: "",
@@ -115,6 +115,19 @@ export function ListaOcorrencias() {
             // mantenha os valores padrão ou ajuste conforme necessário
           }
 
+          const normalizeStatus = (raw: any) => {
+            if (!raw && raw !== 0) return "Desconhecido";
+            const s = String(raw).toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
+            // variantes comuns mapeadas para rótulos padronizados
+            if (s.includes("pend")) return "Pendente";
+            if (s.includes("andamento") || s.includes("em andamento")) return "Em andamento";
+            if (s.includes("atend") || s.includes("conclu")) return "Atendida";
+            if (s.includes("nao") || s.includes("nao_atend") || s.includes("nao atend") || s.includes("nao_atendida") || s.includes("nao_atendido")) return "Não Atendida";
+            return "Desconhecido";
+          };
+
+          const statusLabel = normalizeStatus(o.statusAtendimento ?? o.status ?? o.status_atendimento);
+
           return {
             id: o.numeroOcorrencia || `#OCR-${o.id}`,
             data: dataFormatada,
@@ -131,16 +144,7 @@ export function ListaOcorrencias() {
               : "Sem viatura",
             // garante nome do tipo se existir
             tipo: o.tipo?.nome || o.tipo || "N/A",
-            status:
-              o.statusAtendimento === "pendente"
-                ? "Pendente"
-                : o.statusAtendimento === "em_andamento"
-                  ? "Em andamento"
-                  : o.statusAtendimento === "concluida"
-                    ? "Concluída"
-                    : o.statusAtendimento === "nao_atendido"
-                      ? "Não Atendida"
-                      : "Desconhecido",
+            status: statusLabel,
             responsavel: o.usuario?.nome || "N/A",
           };
         });
@@ -228,7 +232,7 @@ const paginatedOcorrencias = useMemo(() => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Em andamento": return "#3B82F6";
-      case "Concluída": return "#10B981";
+      case "Atendida": return "#10B981";
       case "Pendente": return "#EF4444";
       case "Não Atendida": return "#F59E0B";
       default: return "#6B7280";
@@ -317,7 +321,7 @@ const paginatedOcorrencias = useMemo(() => {
                 total: ocorrencias.length,
                 pendente: ocorrencias.filter(o => o.status === "Pendente").length,
                 andamento: ocorrencias.filter(o => o.status === "Em andamento").length,
-                concluida: ocorrencias.filter(o => o.status === "Concluída").length,
+                atendida: ocorrencias.filter(o => o.status === "Atendida").length,
                 naoAtendida: ocorrencias.filter(o => o.status === "Não Atendida").length,
               };
 
@@ -346,8 +350,8 @@ const paginatedOcorrencias = useMemo(() => {
                     <h3>{counts.andamento}</h3><span>Em Andamento</span>
                   </AuditStatCard>
 
-                  <AuditStatCard onClick={() => selectStatus('Concluída')} style={{ cursor: 'pointer', border: isSelectedStatus('Concluída') ? '2px solid #10B981' : undefined, boxShadow: isSelectedStatus('Concluída') ? '0 0 0 4px rgba(16,185,129,0.08)' : undefined }}>
-                    <h3>{counts.concluida}</h3><span>Concluídas</span>
+                  <AuditStatCard onClick={() => selectStatus('Atendida')} style={{ cursor: 'pointer', border: isSelectedStatus('Atendida') ? '2px solid #10B981' : undefined, boxShadow: isSelectedStatus('Atendida') ? '0 0 0 4px rgba(16,185,129,0.08)' : undefined }}>
+                    <h3>{counts.atendida}</h3><span>Atendidas</span>
                   </AuditStatCard>
 
                   <AuditStatCard onClick={() => selectStatus('Não Atendida')} style={{ cursor: 'pointer', border: isSelectedStatus('Não Atendida') ? '2px solid #F59E0B' : undefined, boxShadow: isSelectedStatus('Não Atendida') ? '0 0 0 4px rgba(245,158,11,0.08)' : undefined }}>
