@@ -883,13 +883,11 @@ export async function putVitima(vitimaId: number, payload: any): Promise<any> {
       method: "PUT", 
       body: JSON.stringify({
         ...payload,
-        // GARANTA QUE ocorrenciaId SEMPRE VAI (muitos backends exigem)
         ocorrenciaId: payload.ocorrenciaId,
       }),
     });
   } catch (error: any) {
     console.error(`Erro ao atualizar vítima ${vitimaId}:`, error);
-    // Re-lança com mais contexto
     throw error;
   }
 }

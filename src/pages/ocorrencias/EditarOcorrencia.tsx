@@ -485,7 +485,7 @@ try {
 
 } catch (err) {
   console.error("Erro ao sincronizar vítimas:", err);
-  alert("Erro ao salvar vítimas. Verifique o console.");
+  // alert("Erro ao salvar vítimas. Verifique o console.");
 }
 
             alert('Ocorrência atualizada com sucesso!');
