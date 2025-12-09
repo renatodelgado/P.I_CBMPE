@@ -32,6 +32,7 @@ import {
   InfoIcon
 } from "@phosphor-icons/react";
 import { Button } from "../../components/Button";
+import api from "../../services/api";
 
 interface FiltroSalvo {
   id: string;
@@ -68,16 +69,18 @@ export function ListaOcorrencias() {
   const [regioesDisponiveis, setRegioesDisponiveis] = useState<string[]>([]);
   const [naturezasOcorrencias, setNaturezasOcorrencias] = useState<string[]>([]);
 
+  const uri = api.getUri();
+
   useEffect(() => {
     async function fetchOptions() {
       try {
         // regiões
-        const regResp = await fetch("https://backend-chama.up.railway.app/regioes");
+        const regResp = await fetch(`${uri}/regioes`);
         const regData = await regResp.json();
         setRegioesDisponiveis(regData.map((r: any) => r.nome)); // ajusta conforme seu JSON
 
         // tipos
-        const tipoResp = await fetch("https://backend-chama.up.railway.app/naturezasocorrencias");
+        const tipoResp = await fetch(`${uri}/naturezasocorrencias`);
         const tipoData = await tipoResp.json();
         setNaturezasOcorrencias(tipoData.map((t: any) => t.nome)); // ajusta conforme seu JSON
       } catch (err) {
@@ -90,7 +93,7 @@ export function ListaOcorrencias() {
   useEffect(() => {
     async function fetchOcorrencias() {
       try {
-        const response = await fetch("https://backend-chama.up.railway.app/ocorrencias");
+        const response = await fetch(`${uri}/ocorrencias`);
         const data = await response.json();
 
         // Mapeamento do retorno para o formato que a tabela usa
@@ -120,6 +123,7 @@ export function ListaOcorrencias() {
 
           return {
             id: o.numeroOcorrencia || `#OCR-${o.id}`,
+            idNumerico: o.id, // ← ADICIONADO: ID numérico para a API
             data: dataFormatada,
             hora: horaFormatada,
             dataTimestamp: dataTimestamp, // timestamp (pode ser undefined)
@@ -514,7 +518,11 @@ const paginatedOcorrencias = useMemo(() => {
                       <td style={{ color: getStatusColor(o.status), fontWeight: 600 }}>{o.status}</td>
                       <td>{o.responsavel}</td>
                       <td>
-                        <button style={{ border: "none", paddingRight: "0.5rem", background: "transparent", cursor: "pointer" }}>
+                        <button 
+                          style={{ border: "none", paddingRight: "0.5rem", background: "transparent", cursor: "pointer" }}
+                          onClick={() => navigate(`/ocorrencias/${o.idNumerico}`)}
+                          title="Visualizar detalhes"
+                        >
                           <EyeIcon size={18} />
                         </button>
                         <button style={{ border: "none", paddingRight: "0.5rem", background: "transparent", cursor: "pointer" }}>
@@ -550,7 +558,11 @@ const paginatedOcorrencias = useMemo(() => {
                   </div>
 
                   <div className="actions">
-                    <button title="Visualizar" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
+                    <button 
+                      title="Visualizar" 
+                      style={{ border: "none", background: "transparent", cursor: "pointer" }}
+                      onClick={() => navigate(`/ocorrencias/${o.idNumerico}`)} 
+                    >
                       <EyeIcon size={18} />
                     </button>
                     <button title="Atribuir" style={{ border: "none", background: "transparent", cursor: "pointer" }}>

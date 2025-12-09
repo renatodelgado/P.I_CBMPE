@@ -12,7 +12,8 @@ import { RelatorioRapido } from "./pages/relatorios/RelatorioRapido";
 import { DashboardOperacional } from "./pages/dashboard/Dashboard";
 import { CadastrarOcorrencia } from "./pages/ocorrencias/NovaOcorrencia";
 import { OfflineSync } from "./components/OfflineSync";
-
+import { DetalhesOcorrencia } from "./pages/ocorrencias/DetalheOcorrencia/DetalheOcorrencia";
+import { EditarOcorrencia } from "./pages/ocorrencias/DetalheOcorrencia/EdicaoOcorrencia";
 
 function App() {
   return (
@@ -30,9 +31,11 @@ function App() {
         <Route path="/usuarios/editar" element={<> <Header/> <EditarUsuario/> </>}/>
         <Route path="/ocorrencias/cadastrar" element={<> <Header/> <NovaOcorrencia/></>}/>
         <Route path="/ocorrencias/nova" element={<> <Header/> <CadastrarOcorrencia/></>}/>
-        </Routes>
+        <Route path="/ocorrencias/:id" element={<> <Header/> <DetalhesOcorrencia/></>}/>
+        <Route path="/ocorrencias/editar/:id" element={<> <Header/> <EditarOcorrencia/></>}/>
+      </Routes>
      </BrowserRouter>
   );
 }
 
-export default App;
+export default App; 
