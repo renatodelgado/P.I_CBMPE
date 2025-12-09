@@ -4,6 +4,10 @@
 import { uploadToCloudinary } from "../utils/uploadToCloudinary";
 
 const BASE_URL = "https://backendpicbmpe-production-d86d.up.railway.app";
+const OCORRENCIAS_CACHE_TTL_MS = 60 * 1000; // 1 min de cache para evitar recarregamentos frequentes
+
+type CacheEntry<T> = { data: T; ts: number } | null;
+let ocorrenciasCache: CacheEntry<OcorrenciaAPI[]> = null;
 
 /** -------------------------
  * Tipagens básicas (podem ampliar conforme a API)
@@ -103,12 +107,14 @@ async function requestJson(url: string, options: RequestInit = {}, timeout = 300
       const runtimeToken = (window as any).__chama_token as string | undefined;
       if (runtimeToken) {
         baseHeaders["Authorization"] = `Bearer ${runtimeToken}`;
+        console.log('[requestJson] Token encontrado no window');
       } else {
         const raw = localStorage.getItem("chama_auth");
         if (raw) {
           const parsed = JSON.parse(raw) as { token?: string } | null;
           if (parsed && parsed.token && !baseHeaders["Authorization"]) {
             baseHeaders["Authorization"] = `Bearer ${parsed.token}`;
+            console.log('[requestJson] Token encontrado no localStorage');
           }
         }
       }
@@ -116,12 +122,17 @@ async function requestJson(url: string, options: RequestInit = {}, timeout = 300
       console.warn("Não foi possível ler token de autenticação:", e);
     }
 
+    console.log(`[requestJson] Fazendo requisição para: ${url}`, { method: options.method || 'GET', headers: baseHeaders });
+
     const res = await fetch(url, {
       ...options,
       signal: controller.signal,
       headers: baseHeaders,
     });
     clearTimeout(id);
+    
+    console.log(`[requestJson] Status: ${res.status} ${res.statusText}`);
+    
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       const err = new Error(`HTTP ${res.status} ${res.statusText} - ${text}`);
@@ -135,6 +146,11 @@ async function requestJson(url: string, options: RequestInit = {}, timeout = 300
     return res.text();
   } catch (err) {
     clearTimeout(id);
+    // Log detalhado do erro
+    console.error('[requestJson] Erro capturado:', err);
+    if (err instanceof TypeError) {
+      console.error('[requestJson] Possível erro de CORS ou de conectividade:', err.message);
+    }
     // Re-lança o erro para o caller decidir
     throw err;
   }
@@ -158,9 +174,18 @@ export async function login(matricula: string, senha: string): Promise<any> {
 }
 
 /** Buscar todas as ocorrências (sem filtros complexos) */
-export async function fetchOcorrencias(): Promise<OcorrenciaAPI[]> {
+export async function fetchOcorrencias(useCache = true): Promise<OcorrenciaAPI[]> {
   try {
-    return await requestJson(`${BASE_URL}/ocorrencias`);
+    const now = Date.now();
+    if (useCache && ocorrenciasCache && now - ocorrenciasCache.ts < OCORRENCIAS_CACHE_TTL_MS) {
+      return ocorrenciasCache.data;
+    }
+
+    const data = await requestJson(`${BASE_URL}/ocorrencias`);
+    if (useCache && Array.isArray(data)) {
+      ocorrenciasCache = { data, ts: now };
+    }
+    return data;
   } catch (error) {
     console.error("Erro na API de ocorrências:", error);
     return [];
@@ -219,10 +244,12 @@ export async function fetchOcorrenciasPorNatureza(naturezaId: number, periodo?: 
 /** Postar ocorrência (criação) */
 export async function postOcorrencia(payload: any): Promise<any> {
   try {
-    return await requestJson(`${BASE_URL}/ocorrencias`, {
+    const result = await requestJson(`${BASE_URL}/ocorrencias`, {
       method: "POST",
       body: JSON.stringify(payload),
     });
+    ocorrenciasCache = null; // invalida cache
+    return result;
   } catch (error) {
     console.error("Erro na API de post ocorrência:", error);
     throw error;
@@ -232,12 +259,31 @@ export async function postOcorrencia(payload: any): Promise<any> {
 /** Postar ocorrência com timeout configurável (útil para offline sync) */
 export async function postOcorrenciaComTimeout(payload: any, timeout = 30000): Promise<any> {
   try {
-    return await requestJson(`${BASE_URL}/ocorrencias`, {
+    const result = await requestJson(`${BASE_URL}/ocorrencias`, {
       method: "POST",
       body: JSON.stringify(payload),
     }, timeout);
+    ocorrenciasCache = null;
+    return result;
   } catch (error) {
     console.error("Erro na API de post ocorrência com timeout:", error);
+    throw error;
+  }
+}
+
+/** Atualizar campos de uma ocorrência (ex: statusAtendimento, motivoNaoAtendimento)
+ *  Rota esperada: PATCH /ocorrencias/:id
+ */
+export async function updateOcorrenciaStatus(id: string | number, payload: any): Promise<any> {
+  try {
+    const result = await requestJson(`${BASE_URL}/ocorrencias/${encodeURIComponent(String(id))}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+    ocorrenciasCache = null;
+    return result;
+  } catch (error) {
+    console.error(`Erro ao atualizar ocorrência ${id}:`, error);
     throw error;
   }
 }
@@ -727,5 +773,147 @@ export async function fetchLogAuditoriaPorUsuario(usuarioId: number): Promise<an
   } catch (error) {
     console.error("Erro na API de log de auditoria por usuário:", error);
     return [];
+  }
+}
+
+/** Buscar vítimas por ocorrência (rota: GET /vitimas/:ocorrenciaId) */
+export async function fetchVitimasPorOcorrencia(ocorrenciaId: string | number): Promise<any[]> {
+  try {
+    const sid = String(ocorrenciaId || "").trim();
+    if (!sid || sid.toLowerCase() === "new" || Number.isNaN(Number(sid))) {
+      // inválido — não chamar a API e retornar lista vazia
+      return [];
+    }
+    return await requestJson(`${BASE_URL}/vitimas/${encodeURIComponent(String(ocorrenciaId))}`, {}, 15000);
+  } catch (error) {
+    return [
+      console.error(`Erro ao buscar vítimas da ocorrência ${ocorrenciaId}:`, error),
+    ];
+  }
+}
+
+export async function fetchEquipeOcorrencia(ocorrenciaId: string | number): Promise<Usuario[]> {
+  try {
+    const sid = String(ocorrenciaId || "").trim();
+    if (!sid || sid.toLowerCase() === "new" || Number.isNaN(Number(sid))) {
+      return [];
+    }
+    // rota esperada: /ocorrencia-user/ocorrencia/:id/users
+    // ajuste se sua API usar outro caminho — mantenha todo consumo aqui
+    const url = `${BASE_URL}/ocorrencia-user/ocorrencia/${encodeURIComponent(String(ocorrenciaId))}/users`;
+    const data = await requestJson(url, {}, 10000);
+
+    const arr = Array.isArray(data) ? data : [];
+
+    // Normaliza várias formas que o backend pode devolver:
+    // - já um usuário: { id, nome, patente }
+    // - wrapper: { user: { ... } } ou { usuario: { ... } }
+    // - campos em inglês: name, username, fullName
+    const normalized = arr.map((item: any) => {
+      const u = item?.user ?? item?.usuario ?? item;
+      const idVal = Number(u?.id ?? item?.id ?? item?.userId ?? item?.usuarioId ?? 0) || 0;
+      const nomeVal = u?.nome ?? u?.name ?? u?.username ?? u?.fullName ?? u?.nomeCompleto ?? item?.nome ?? item?.name ?? "";
+      const patenteVal = u?.patente ?? u?.rank ?? item?.patente ?? item?.rank ?? undefined;
+
+      return {
+        id: idVal,
+        nome: nomeVal,
+        patente: patenteVal,
+        ...((u && typeof u === 'object') ? u : {}),
+      } as Usuario;
+    });
+
+    // remover duplicatas simples (por id ou nome)
+    const mapa = new Map<string, Usuario>();
+    normalized.forEach((u) => {
+      const key = String(u.id || u.nome || Math.random());
+      if (!mapa.has(key)) mapa.set(key, u);
+    });
+
+    return Array.from(mapa.values());
+  } catch (error) {
+    console.error(`Erro na API de equipe para ocorrência ${ocorrenciaId}:`, error);
+    return [];
+  }
+}
+
+// Atualizar ocorrência (PUT /ocorrencias/:id)
+export async function putOcorrencia(id: number, payload: any): Promise<any> {
+  try {
+    const url = `${BASE_URL}/ocorrencias/${encodeURIComponent(String(id))}`;
+    console.log(`[putOcorrencia] Enviando PUT para: ${url}`);
+    console.log(`[putOcorrencia] Payload:`, payload);
+    
+    const result = await requestJson(url, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+    
+    console.log(`[putOcorrencia] Sucesso:`, result);
+    ocorrenciasCache = null;
+    return result;
+  } catch (error) {
+    console.error(`Erro na API de put ocorrência ${id}:`, error);
+    if (error instanceof Error) {
+      console.error(`Mensagem do erro: ${error.message}`);
+      console.error(`Stack: ${error.stack}`);
+    }
+    throw error;
+  }
+}
+
+// Deletar pessoa da equipe da ocorrencia (DELETE /ocorrencia-user/ocorrencia/:ocorrenciaId/user/:userId)
+
+export async function deletePessoaEquipeOcorrencia(ocorrenciaId: number, userId: number): Promise<any> {
+  try {
+    return await requestJson(`${BASE_URL}/ocorrencia-user/ocorrencia/${encodeURIComponent(String(ocorrenciaId))}/user/${encodeURIComponent(String(userId))}`, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    console.error(`Erro na API de delete pessoa da equipe da ocorrência ${ocorrenciaId}, user ${userId}:`, error);
+    throw error;
+  }
+}
+
+//Atualizar vítima de uma ocorrência (PUT /vitimas/:id)
+
+export async function putVitima(vitimaId: number, payload: any): Promise<any> {
+  try {
+    return await requestJson(`${BASE_URL}/vitimas/${vitimaId}`, {
+      method: "PUT", 
+      body: JSON.stringify({
+        ...payload,
+        // GARANTA QUE ocorrenciaId SEMPRE VAI (muitos backends exigem)
+        ocorrenciaId: payload.ocorrenciaId,
+      }),
+    });
+  } catch (error: any) {
+    console.error(`Erro ao atualizar vítima ${vitimaId}:`, error);
+    // Re-lança com mais contexto
+    throw error;
+  }
+}
+
+// Deletar vítima de uma ocorrência (DELETE /vitimas/:id)
+export async function deleteVitima(vitimaId: number): Promise<any> {
+  try {
+    return await requestJson(`${BASE_URL}/vitimas/${encodeURIComponent(String(vitimaId))}`, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    console.error(`Erro na API de delete vítima ${vitimaId}:`, error);
+    throw error;
+  }
+}
+
+// Deletar anexo de uma ocorrência (DELETE /anexos/:id)
+export async function deleteAnexo(anexoId: number): Promise<any> {
+  try {
+    return await requestJson(`${BASE_URL}/anexos/${encodeURIComponent(String(anexoId))}`, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    console.error(`Erro na API de delete anexo ${anexoId}:`, error);
+    throw error;
   }
 }

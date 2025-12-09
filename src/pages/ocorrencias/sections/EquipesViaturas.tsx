@@ -18,12 +18,15 @@ import {
 import { fetchViaturas, fetchUnidadesOperacionais, fetchUsuarios } from "../../../services/api";
 import type { Usuario } from "../../../services/api";
 
+
+
 interface EquipesViaturasProps {
   unidade: string;
   setUnidade: (value: string) => void;
   numeracaoViatura: string;
   setNumeracaoViatura: (value: string) => void;
-  onTeamMembersChange?: (members: Usuario[]) => void; // notifica o pai sobre mudanças na equipe
+  onTeamMembersChange?: (members: Usuario[]) => void;
+  initialTeamMembers?: Usuario[];
 }
 
 export function EquipesViaturas(props: EquipesViaturasProps) {
@@ -36,15 +39,20 @@ export function EquipesViaturas(props: EquipesViaturasProps) {
   // busca / seleção de equipe (agora dentro deste componente)
   const [allUsers, setAllUsers] = useState<Usuario[]>([]);
   const [teamQuery, setTeamQuery] = useState("");
-  const [teamMembers, setTeamMembers] = useState<Usuario[]>([]);
+const [teamMembers, setTeamMembers] = useState<Usuario[]>(
+    props.initialTeamMembers || []
+  );
+  useEffect(() => {
+    props.onTeamMembersChange?.(teamMembers);
+  }, [teamMembers, props]);
 
+  // Carrega usuários apenas uma vez
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
         const users = await fetchUsuarios();
-        if (!mounted) return;
-        setAllUsers(Array.isArray(users) ? users : []);
+        if (mounted) setAllUsers(Array.isArray(users) ? users : []);
       } catch (err) {
         console.error("Falha ao carregar usuários:", err);
       }

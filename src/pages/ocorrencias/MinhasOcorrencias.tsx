@@ -18,9 +18,6 @@ import {
     MiniGrid,
     PageTopHeaderColumn,
     StatusBadge,
-    CardLabel,
-    CardValue,
-    CardRow,
     CardActions,
     CardBody,
     CardDate,
@@ -42,7 +39,6 @@ import {
     fetchOcorrenciasUsuario,
     fetchNaturezasOcorrencias,
     fetchUsuario,
-    getOcorrenciaPorId,
     normalizeStatusLabel,
 } from "../../services/api";
 
@@ -89,11 +85,6 @@ export function MinhasOcorrencias(): JSX.Element {
     const [error, setError] = useState<string | null>(null);
 
     // Modal detalhe
-    const [openDetailId, setOpenDetailId] = useState<number | null>(null);
-    const [detailLoading, setDetailLoading] = useState(false);
-    const [detailData, setDetailData] = useState<any | null>(null);
-    const [detailError, setDetailError] = useState<string | null>(null);
-
     // Carrega usuário logado
     useEffect(() => {
         let mounted = true;
@@ -266,29 +257,6 @@ export function MinhasOcorrencias(): JSX.Element {
     };
     const handleApplySavedFilter = (f: FiltroSalvo) => setFilters(f.values);
 
-    // Detalhes: abre modal e busca via getOcorrenciaPorId
-    const openDetalhes = async (origId: number) => {
-        setOpenDetailId(origId);
-        setDetailLoading(true);
-        setDetailError(null);
-        setDetailData(null);
-        try {
-            const data = await getOcorrenciaPorId(origId);
-            setDetailData(data);
-        } catch (err) {
-            console.error("Erro ao buscar detalhe:", err);
-            setDetailError("Não foi possível carregar detalhes.");
-        } finally {
-            setDetailLoading(false);
-        }
-    };
-
-    const closeDetalhes = () => {
-        setOpenDetailId(null);
-        setDetailData(null);
-        setDetailError(null);
-    };
-
     return (
         <ContainerPainel>
             <PageTopHeaderRow>
@@ -358,11 +326,11 @@ export function MinhasOcorrencias(): JSX.Element {
                             </AuditStatCard>
 
                             <AuditStatCard
-                                        onClick={() => selectStatus('Atendida')}
-                                        style={{ cursor: 'pointer', border: isSelectedStatus('Atendida') ? '2px solid #10B981' : undefined, boxShadow: isSelectedStatus('Atendida') ? '0 0 0 4px rgba(16,185,129,0.08)' : undefined }}
-                                    >
-                                        <h3>{counts.atendida}</h3><span>Atendidas</span>
-                                    </AuditStatCard>
+                                onClick={() => selectStatus('Atendida')}
+                                style={{ cursor: 'pointer', border: isSelectedStatus('Atendida') ? '2px solid #10B981' : undefined, boxShadow: isSelectedStatus('Atendida') ? '0 0 0 4px rgba(16,185,129,0.08)' : undefined }}
+                            >
+                                <h3>{counts.atendida}</h3><span>Atendidas</span>
+                            </AuditStatCard>
 
                             <AuditStatCard
                                 onClick={() => selectStatus('Não Atendida')}
@@ -373,7 +341,7 @@ export function MinhasOcorrencias(): JSX.Element {
                         </>
                     );
                 })()}
-             </MiniGrid>
+            </MiniGrid>
 
             <ResponsiveRow>
                 <GridColumn weight={1}>
@@ -464,7 +432,15 @@ export function MinhasOcorrencias(): JSX.Element {
                             Ocorrências ({filteredOcorrencias.length})
                         </SectionTitle>
 
-                        {loading && <p style={{ color: '#64748b', textAlign: 'center', padding: '3rem 0' }}>Carregando ocorrências...</p>}
+                        {loading && (
+                            <div style={{ padding: 40, textAlign: 'center', color: '#64748b' }}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12 }}>
+                                    <div style={{ width: 20, height: 20, border: '3px solid #f3f4f6', borderTop: '3px solid #2563eb', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                                    <div>Carregando ocorrências...</div>
+                                </div>
+                                <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+                            </div>
+                        )}
                         {error && <p style={{ color: '#dc2626', textAlign: 'center' }}>{error}</p>}
 
                         <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))' }}>
@@ -492,10 +468,12 @@ export function MinhasOcorrencias(): JSX.Element {
 
                                     <CardFooter>
                                         <CardActions>
-                                            <Button text="Ver" variant="secondary"
-                                                onClick={() => navigate(`/ocorrencias/${o.origId}`)} />
+                                            {o.status !== "Atendida" && o.status !== "Não Atendida" && (
+                                                <Button text="Editar" variant="secondary"
+                                                    onClick={() => navigate(`/ocorrencias/editar/${o.origId}`)} />
+                                            )}
                                             <Button text="Detalhes" variant="primary"
-                                                onClick={() => openDetalhes(o.origId)} />
+                                                onClick={() => navigate(`/ocorrencias/detalhes/${o.origId}`)} />
                                         </CardActions>
                                         <StatusBadge cor={getStatusColor(o.status)}>{o.status}</StatusBadge>
                                     </CardFooter>
@@ -535,75 +513,6 @@ export function MinhasOcorrencias(): JSX.Element {
                 </div>
             )}
 
-            {/* Modal Detalhes */}
-            {openDetailId !== null && (
-                <div onClick={closeDetalhes} style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.45)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 10000 }}>
-                    <BoxInfo onClick={e => e.stopPropagation()} style={{ width: "95%", maxWidth: 900, maxHeight: "80vh", overflow: "auto" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <h3>Detalhes da Ocorrência {openDetailId}</h3>
-                            <div>
-                                <Button text="Fechar" onClick={closeDetalhes} variant="secondary" />
-                            </div>
-                        </div>
-
-                        {detailLoading && <p>Carregando detalhes...</p>}
-                        {detailError && <p style={{ color: "#ef4444" }}>{detailError}</p>}
-                        {detailData && (
-                            <div style={{ marginTop: 8 }}>
-                                <CardRow>
-                                    <CardLabel>ID</CardLabel>
-                                    <CardValue>{detailData.numeroOcorrencia || detailData.id}</CardValue>
-                                </CardRow>
-
-                                <CardRow>
-                                    <CardLabel>Natureza</CardLabel>
-                                    <CardValue>{detailData.naturezaOcorrencia?.nome || "N/A"}</CardValue>
-                                </CardRow>
-
-                                <CardRow>
-                                    <CardLabel>Descrição</CardLabel>
-                                    <CardValue style={{ fontWeight: 400 }}>{detailData.descricao || "—"}</CardValue>
-                                </CardRow>
-
-                                <CardRow>
-                                    <CardLabel>Localização completa</CardLabel>
-                                    <CardValue>
-                                        {detailData.localizacao ? `${detailData.localizacao.municipio || ""} - ${detailData.localizacao.bairro || ""}, ${detailData.localizacao.logradouro || ""} ${detailData.localizacao.numero || ""}` : "Não informada"}
-                                    </CardValue>
-                                </CardRow>
-
-                                <CardRow>
-                                    <CardLabel>Viatura</CardLabel>
-                                    <CardValue>{detailData.viatura ? `${detailData.viatura.tipo}-${detailData.viatura.numero}` : "Sem viatura"}</CardValue>
-                                </CardRow>
-
-                                <CardRow>
-                                    <CardLabel>Usuario</CardLabel>
-                                    <CardValue>{detailData.usuario?.nome || "N/A"} — {detailData.usuario?.matricula || ""}</CardValue>
-                                </CardRow>
-
-                                <div style={{ marginTop: 12 }}>
-                                    <CardLabel>Anexos</CardLabel>
-                                    <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
-                                        {Array.isArray(detailData.anexos) && detailData.anexos.length > 0 ? detailData.anexos.map((a: any) => (
-                                            <a key={a.id || a.urlArquivo} href={a.urlArquivo} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>
-                                                <div style={{ padding: 8, border: "1px solid #e2e8f0", borderRadius: 8, minWidth: 120, textAlign: "center" }}>
-                                                    <div style={{ fontSize: 13, fontWeight: 600 }}>{a.nomeArquivo || a.urlArquivo?.split("/").pop()}</div>
-                                                    <div style={{ fontSize: 12, color: "#64748b" }}>{a.tipoArquivo || a.extensaoArquivo}</div>
-                                                </div>
-                                            </a>
-                                        )) : <div style={{ color: "#64748b" }}>Nenhum anexo</div>}
-                                    </div>
-                                </div>
-
-                                <pre style={{ marginTop: 12, background: "#f8fafc", padding: 12, borderRadius: 8, overflow: "auto", fontSize: 12 }}>
-                                    {JSON.stringify(detailData, null, 2)}
-                                </pre>
-                            </div>
-                        )}
-                    </BoxInfo>
-                </div>
-            )}
         </ContainerPainel>
     );
 }

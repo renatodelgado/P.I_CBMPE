@@ -29,7 +29,7 @@ import {
   PlusIcon,
   EyeIcon,
   UserIcon,
-  InfoIcon
+  PencilIcon
 } from "@phosphor-icons/react";
 import { Button } from "../../components/Button";
 import jsPDF from "jspdf";
@@ -59,6 +59,7 @@ const defaultFilters = {
 
 export function ListaOcorrencias() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const [filters, setFilters] = useState(defaultFilters);
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,6 +88,7 @@ export function ListaOcorrencias() {
 
   useEffect(() => {
     async function fetchOcorrenciasData() {
+      setLoading(true);
       try {
         const data = await fetchOcorrencias();
 
@@ -129,6 +131,7 @@ export function ListaOcorrencias() {
           const statusLabel = normalizeStatus(o.statusAtendimento ?? o.status ?? o.status_atendimento);
 
           return {
+            origId: o.id,
             id: o.numeroOcorrencia || `#OCR-${o.id}`,
             data: dataFormatada,
             hora: horaFormatada,
@@ -160,6 +163,8 @@ export function ListaOcorrencias() {
         setLocalizacoesDisponiveis(uniqueLocs);
       } catch (error) {
         console.error("Erro ao buscar ocorrências:", error);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -201,24 +206,24 @@ export function ListaOcorrencias() {
   }, [ocorrencias, filters]);
 
 
-// Corrige o cálculo do totalPages
-const totalPages = Math.max(1, Math.ceil(filteredOcorrencias.length / pageSize));
+  // Corrige o cálculo do totalPages
+  const totalPages = Math.max(1, Math.ceil(filteredOcorrencias.length / pageSize));
 
-// Garante que currentPage sempre esteja dentro do range válido
-useEffect(() => {
-  if (currentPage > totalPages && totalPages > 0) {
-    setCurrentPage(totalPages);
-  } else if (currentPage < 1) {
-    setCurrentPage(1);
-  }
-}, [totalPages, currentPage]);
+  // Garante que currentPage sempre esteja dentro do range válido
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    } else if (currentPage < 1) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
 
-// Paginação correta - sempre retorna no máximo 6 itens
-const paginatedOcorrencias = useMemo(() => {
-  const start = (currentPage - 1) * pageSize;
-  const end = start + pageSize;
-  return filteredOcorrencias.slice(start, end);
-}, [filteredOcorrencias, currentPage, pageSize]);
+  // Paginação correta - sempre retorna no máximo 6 itens
+  const paginatedOcorrencias = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    return filteredOcorrencias.slice(start, end);
+  }, [filteredOcorrencias, currentPage, pageSize]);
 
 
   // quando filtros mudam, volta para a primeira página
@@ -373,78 +378,78 @@ const paginatedOcorrencias = useMemo(() => {
             <Grid>
               <Field>
                 <label>Período</label>
-                  <DateRange>
-                    <input type="date" value={filters.periodoInicio} onChange={e => setFilters(f => ({ ...f, periodoInicio: e.target.value }))} />
-                    <input type="date" value={filters.periodoFim} onChange={e => setFilters(f => ({ ...f, periodoFim: e.target.value }))} />
-                  </DateRange>
+                <DateRange>
+                  <input type="date" value={filters.periodoInicio} onChange={e => setFilters(f => ({ ...f, periodoInicio: e.target.value }))} />
+                  <input type="date" value={filters.periodoFim} onChange={e => setFilters(f => ({ ...f, periodoFim: e.target.value }))} />
+                </DateRange>
               </Field>
               <Field>
                 <label>Natureza da Ocorrência</label>
-                  <select
-                    value={filters.natureza}
-                    onChange={e => setFilters(f => ({ ...f, natureza: e.target.value }))}
-                  >
-                    <option value="todos">Todos</option>
-                    {naturezasOcorrencias.map((t, index) => (
-                      <option key={`${t}-${index}`} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                
+                <select
+                  value={filters.natureza}
+                  onChange={e => setFilters(f => ({ ...f, natureza: e.target.value }))}
+                >
+                  <option value="todos">Todos</option>
+                  {naturezasOcorrencias.map((t, index) => (
+                    <option key={`${t}-${index}`} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+
               </Field>
 
               <Field>
                 <label>Localização (Município - Bairro)</label>
-                  <select
-                    value={filters.regiao}
-                    onChange={e => setFilters(f => ({ ...f, regiao: e.target.value }))}
-                  >
-                    <option value="todas">Todas</option>
-                    {localizacoesDisponiveis.map((l, index) => (
-                      <option key={`${l}-${index}`} value={l}>
-                        {l}
-                      </option>
-                    ))}
-                  </select>
-                
+                <select
+                  value={filters.regiao}
+                  onChange={e => setFilters(f => ({ ...f, regiao: e.target.value }))}
+                >
+                  <option value="todas">Todas</option>
+                  {localizacoesDisponiveis.map((l, index) => (
+                    <option key={`${l}-${index}`} value={l}>
+                      {l}
+                    </option>
+                  ))}
+                </select>
+
               </Field>
 
               <Field>
                 <label>Viatura / Equipe</label>
-                  <input type="text" placeholder="Digite para buscar..." value={filters.viatura} onChange={e => setFilters(f => ({ ...f, viatura: e.target.value }))} />
+                <input type="text" placeholder="Digite para buscar..." value={filters.viatura} onChange={e => setFilters(f => ({ ...f, viatura: e.target.value }))} />
 
               </Field>
               <Field>
                 <label>Status</label>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
-                    {STATUS_OPTIONS.map((s, index) => (
-                      <label
-                        key={`${s}-${index}`}
-                        style={{ fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={filters.status.includes(s)}
-                          onChange={e => {
-                            setFilters(f => {
-                              const newStatus = e.target.checked
-                                ? [...f.status, s]
-                                : f.status.filter(item => item !== s);
-                              return { ...f, status: newStatus };
-                            });
-                          }}
-                        />
-                        {s}
-                      </label>
-                    ))}
-                  </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "4px" }}>
+                  {STATUS_OPTIONS.map((s, index) => (
+                    <label
+                      key={`${s}-${index}`}
+                      style={{ fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={filters.status.includes(s)}
+                        onChange={e => {
+                          setFilters(f => {
+                            const newStatus = e.target.checked
+                              ? [...f.status, s]
+                              : f.status.filter(item => item !== s);
+                            return { ...f, status: newStatus };
+                          });
+                        }}
+                      />
+                      {s}
+                    </label>
+                  ))}
+                </div>
               </Field>
 
 
               <Field>
                 <label>Busca Livre</label>
-                  <input type="text" placeholder="Pesquisar por ID, responsável, local..." value={filters.buscaLivre} onChange={e => setFilters(f => ({ ...f, buscaLivre: e.target.value }))} />
+                <input type="text" placeholder="Pesquisar por ID, responsável, local..." value={filters.buscaLivre} onChange={e => setFilters(f => ({ ...f, buscaLivre: e.target.value }))} />
               </Field>
             </Grid>
 
@@ -557,46 +562,69 @@ const paginatedOcorrencias = useMemo(() => {
               </div>
             </div>
             <TableWrapper className="TableWrapper">
-              <Table>
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>ID</th>
-                    <th>Data/Hora</th>
-                    <th>Tipo</th>
-                    <th>Localização</th>
-                    <th>Viatura</th>
-                    <th>Status</th>
-                    <th>Responsável</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedOcorrencias.map(o => (
-                    <tr key={o.id}>
-                      <td><input type="checkbox" /></td>
-                      <td>{o.id}</td>
-                      <td>{o.data}<br /><small>{o.hora}</small></td>
-                      <td>{o.natureza}</td>
-                      <td>{o.localizacao}</td>
-                      <td>{o.viatura}</td>
-                      <td style={{ color: getStatusColor(o.status), fontWeight: 600 }}>{o.status}</td>
-                      <td>{o.responsavel}</td>
-                      <td>
-                        <button style={{ border: "none", paddingRight: "0.5rem", background: "transparent", cursor: "pointer" }}>
-                          <EyeIcon size={18} />
-                        </button>
-                        <button style={{ border: "none", paddingRight: "0.5rem", background: "transparent", cursor: "pointer" }}>
-                          <UserIcon size={18} />
-                        </button>
-                        <button style={{ border: "none", background: "transparent", cursor: "pointer" }}>
-                          <InfoIcon size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
+              {loading ? (
+                <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 20, height: 20, border: "3px solid #f3f4f6", borderTop: "3px solid #dc2626", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                    <div>Carregando ocorrências...</div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <Table>
+                    <thead>
+                      <tr>
+                        <th></th>
+                        <th>ID</th>
+                        <th>Data/Hora</th>
+                        <th>Tipo</th>
+                        <th>Localização</th>
+                        <th>Viatura</th>
+                        <th>Status</th>
+                        <th>Responsável</th>
+                        <th>Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedOcorrencias.map(o => (
+                        <tr key={o.id}>
+                          <td><input type="checkbox" /></td>
+                          <td>{o.id}</td>
+                          <td>{o.data}<br /><small>{o.hora}</small></td>
+                          <td>{o.natureza}</td>
+                          <td>{o.localizacao}</td>
+                          <td>{o.viatura}</td>
+                          <td style={{ color: getStatusColor(o.status), fontWeight: 600 }}>{o.status}</td>
+                          <td>{o.responsavel}</td>
+                          <td>
+                            <button
+                              onClick={() => navigate(`/ocorrencias/detalhes/${o.origId ?? o.id}`)}
+                              style={{ border: "none", paddingRight: "0.5rem", background: "transparent", cursor: "pointer" }}
+                              title="Visualizar ocorrência"
+                            >
+                              <EyeIcon size={18} />
+                            </button>
+                            <button style={{ border: "none", paddingRight: "0.5rem", background: "transparent", cursor: "pointer" }}>
+                              <UserIcon size={18} />
+                            </button>
+                            {o.status !== "Atendida" && o.status !== "Não Atendida" && (
+                              <button
+                                onClick={() => navigate(`/ocorrencias/editar/${o.origId ?? o.id}`)}
+                                style={{ border: "none", background: "transparent", cursor: "pointer" }}
+                                title="Editar ocorrência"
+                              >
+                                <PencilIcon size={18} />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+
+                  <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+                </>
+              )}
             </TableWrapper>
 
             <MobileCardWrapper className="MobileCardWrapper">
@@ -619,15 +647,25 @@ const paginatedOcorrencias = useMemo(() => {
                   </div>
 
                   <div className="actions">
-                    <button title="Visualizar" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
+                    <button
+                      title="Visualizar"
+                      onClick={() => navigate(`/ocorrencias/detalhes/${o.origId ?? o.id}`)}
+                      style={{ border: "none", background: "transparent", cursor: "pointer" }}
+                    >
                       <EyeIcon size={18} />
                     </button>
                     <button title="Atribuir" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
                       <UserIcon size={18} />
                     </button>
-                    <button title="Detalhes" style={{ border: "none", background: "transparent", cursor: "pointer" }}>
-                      <InfoIcon size={18} />
-                    </button>
+                    {o.status !== "Atendida" && o.status !== "Não Atendida" && (
+                      <button
+                        title="Editar"
+                        onClick={() => navigate(`/ocorrencias/editar/${o.origId ?? o.id}`)}
+                        style={{ border: "none", background: "transparent", cursor: "pointer" }}
+                      >
+                        <PencilIcon size={18} />
+                      </button>
+                    )}
                   </div>
                 </MobileCard>
               ))} </MobileCardWrapper>

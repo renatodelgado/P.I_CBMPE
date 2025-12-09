@@ -11,7 +11,7 @@ import { AnexosEvidencias } from "./sections/AnexosEvidencias";
 import { DadosPrincipais } from "./sections/DadosPrincipais";
 import { EquipesViaturas } from "./sections/EquipesViaturas";
 import { Localizacao } from "./sections/Localizacao";
-import { VitimasPessoas } from "./sections/VitimasPessoas";
+import { VitimasPessoas, type VitimaEdicao } from "./sections/VitimasPessoas";
 import { Button } from "../../components/Button";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 
@@ -19,20 +19,6 @@ import { WarningCircleIcon } from "@phosphor-icons/react";
 import { postOcorrencia, postVitima, postOcorrenciaUsuario } from "../../services/api";
 import type { Usuario } from "../../services/api";
 import { AuthContext } from "../../context/AuthContext";
-
-type Pessoa = {
-    id: number;
-    nome: string;
-    sexo?: string;
-    etnia?: string;
-    idade?: number;
-    cpf: string;
-    tipoAtendimento: string;
-    observacoes: string;
-    condicao: string;
-    destinoVitima?: string;
-    condicaoVitima?: number;
-};
 
 type UploadedFile = {
     file?: File;
@@ -66,7 +52,7 @@ const mapStatus = (s: string) => {
 export function CadastrarOcorrencia() {
     const isOnline = useOnlineStatus();
     const [municipios, setMunicipios] = useState<Municipio[]>([]);
-    const [pessoas, setPessoas] = useState<Pessoa[]>([]);
+    const [vitimas, setVitimas] = useState<VitimaEdicao[]>([]);
     const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
     const [assinaturaDataUrl, setAssinaturaDataUrl] = useState<string | undefined>(undefined);
     const [eventoEspecial, setEventoEspecial] = useState(false);
@@ -156,7 +142,7 @@ export function CadastrarOcorrencia() {
                 numeracaoViatura,
                 tempoResposta,
                 observacoesAdicionais,
-                pessoas,
+                vitimas,
                 uploadedFiles: filesData,
                 assinaturaDataUrl,
                 teamMembers, // inclui equipe no rascunho
@@ -170,7 +156,7 @@ export function CadastrarOcorrencia() {
 
             // Limpar formulário
             uploadedFiles.forEach((f) => f.preview && URL.revokeObjectURL(f.preview));
-            setPessoas([]);
+            setVitimas([]);
             setUploadedFiles([]);
             setAssinaturaDataUrl(undefined);
             setEventoEspecial(false);
@@ -207,21 +193,6 @@ export function CadastrarOcorrencia() {
             console.error("Erro ao salvar rascunho:", err);
             alert("Falha ao salvar rascunho.");
         }
-    };
-
-    const addPessoa = () => {
-        setPessoas((prev) => [
-            ...prev,
-            { id: Date.now() + Math.floor(Math.random() * 1000), nome: "", idade: undefined, cpf: "", tipoAtendimento: "", condicao: "", sexo: "", etnia: "", observacoes: "" },
-        ]);
-    };
-
-    const updatePessoa = (id: number, patch: Partial<Pessoa>) => {
-        setPessoas((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
-    };
-
-    const removePessoa = (id: number) => {
-        setPessoas((prev) => (prev.length > 0 ? prev.filter((p) => p.id !== id) : prev));
     };
 
     const handleFileUpload = async (files: FileList | null) => {
@@ -406,7 +377,7 @@ export function CadastrarOcorrencia() {
             }
 
             // enviar vítimas
-            if (Array.isArray(pessoas) && pessoas.length > 0) {
+            if (Array.isArray(vitimas) && vitimas.length > 0) {
                 const mapSexo = (s?: string) => {
                     if (!s) return undefined;
                     const low = s.toString().toLowerCase();
@@ -414,17 +385,17 @@ export function CadastrarOcorrencia() {
                     if (low.startsWith("f")) return "F";
                     return "O";
                 };
-                const vitimasPayloads = pessoas.map((p) => ({
-                    cpfVitima: p.cpf || "",
-                    nome: p.nome || "",
-                    idade: p.idade ?? undefined,
-                    sexo: mapSexo(p.sexo),
-                    tipoAtendimento: p.tipoAtendimento || undefined,
-                    observacoes: p.observacoes || undefined,
-                    etnia: p.etnia || undefined,
-                    destinoVitima: p.destinoVitima || undefined,
+                const vitimasPayloads = vitimas.map((v) => ({
+                    cpfVitima: v.cpfVitima || "",
+                    nome: v.nome || "",
+                    idade: v.idade ?? undefined,
+                    sexo: mapSexo(v.sexo),
+                    tipoAtendimento: v.tipoAtendimento || undefined,
+                    observacoes: v.observacoes || undefined,
+                    etnia: v.etnia || undefined,
+                    destinoVitima: v.destinoVitima || undefined,
                     ocorrenciaId: ocorrenciaId,
-                    lesaoId: p.condicao ? Number(p.condicao) : (p.condicaoVitima ?? undefined),
+                    lesaoId: v.lesaoId ?? undefined,
                 }));
                 try {
                     const results = await Promise.all(
@@ -551,10 +522,8 @@ export function CadastrarOcorrencia() {
             <ResponsiveRow>
                 <GridColumn weight={1}>
                     <VitimasPessoas
-                        pessoas={pessoas}
-                        addPessoa={addPessoa}
-                        updatePessoa={updatePessoa}
-                        removePessoa={removePessoa}
+                        vitimas={vitimas}
+                        onChange={setVitimas}
                     />
                 </GridColumn>
             </ResponsiveRow>
@@ -585,7 +554,7 @@ export function CadastrarOcorrencia() {
                                     }
 
                                     // Reset form state to defaults
-                                    setPessoas([]);
+                                    setVitimas([]);
                                     setUploadedFiles([]);
                                     setAssinaturaDataUrl(undefined);
                                     setEventoEspecial(false);

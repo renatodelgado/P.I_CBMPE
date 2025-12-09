@@ -12,7 +12,8 @@ import { CadastrarOcorrencia } from "./pages/ocorrencias/NovaOcorrencia";
 import { MinhasOcorrencias } from "./pages/ocorrencias/MinhasOcorrencias";
 import { PerfilPage } from "./pages/usuarios/Perfil";
 import { Sobre } from "./pages/Sobre";
-
+import { DetalhesOcorrencia } from "./pages/ocorrencias/DetalheOcorrencia";
+import { EditarOcorrencia } from "./pages/ocorrencias/EditarOcorrencia";
 
 function App() {
   return (
@@ -29,9 +30,12 @@ function App() {
         <Route path="/ocorrencias/minhas" element={<RequireAuth><Header/><MinhasOcorrencias/></RequireAuth>} />
         <Route path="/perfil" element={<RequireAuth><Header/><PerfilPage/></RequireAuth>} />
         <Route path="/sobre" element={<RequireAuth><Header/><Sobre/></RequireAuth>} />
+        <Route path ="/ocorrencias/detalhes/:id" element={<RequireAuth><Header/><DetalhesOcorrencia/></RequireAuth>} />
+        <Route path="*" element={<h1>404 - Página não encontrada</h1>} />
+        <Route path="ocorrencias/editar/:id" element={<RequireAuth><Header/><EditarOcorrencia/></RequireAuth>} />
         </Routes>
      </BrowserRouter>
   );
-}
+} 
 
 export default App;

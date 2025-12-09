@@ -1,176 +1,168 @@
-// File: src/components/sections/VitimasPessoas.tsx
+// src/components/sections/VitimasPessoas.tsx
+
 import { useEffect, useState } from "react";
 import { UserIcon } from "@phosphor-icons/react";
-import { BoxInfo, SectionTitle, Grid, PersonCard, PersonCardHeader, PersonRemoveButton, Field, FullField } from "../../../components/EstilosPainel.styles";
-import { formatCPF } from "../../../utils/formatCPF";
+import { BoxInfo, SectionTitle, Grid, Field, FullField } from "../../../components/EstilosPainel.styles";
 import { Button } from "../../../components/Button";
-
-// Import da função de API do api.ts
 import { fetchLesoes } from "../../../services/api";
 
-type Pessoa = {
+export interface VitimaEdicao {
   id: number;
   nome: string;
-  sexo?: string;
-  etnia?: string;
+  cpfVitima?: string;
   idade?: number;
-  cpf: string;
-  tipoAtendimento: string;
-  observacoes: string;
-  condicao: string;
+  sexo?: "M" | "F" | "O";
+  etnia?: string;
+  tipoAtendimento?: string;
+  observacoes?: string;
   destinoVitima?: string;
-  condicaoVitima?: number;
-};
-
-interface VitimasPessoasProps {
-  pessoas: Pessoa[];
-  addPessoa: () => void;
-  updatePessoa: (id: number, patch: Partial<Pessoa>) => void;
-  removePessoa: (id: number) => void;
+  lesaoId?: number;
+  lesao?: { id: number; tipoLesao: string };
+  isNova?: boolean;
 }
 
-export function VitimasPessoas(props: VitimasPessoasProps) {
-  const [condicoesVitima, setCondicoesVitima] = useState<
-    { id: number; tipoLesao: string }[]
-  >([]);
-  const [loadingCondicaoVitima, setLoadingCondicaoVitima] = useState<boolean>(true);
+interface VitimasPessoasProps {
+  vitimas: VitimaEdicao[];
+  onChange: (vitimas: VitimaEdicao[]) => void;
+}
+
+export function VitimasPessoas({ vitimas, onChange }: VitimasPessoasProps) {
+  const [lesoes, setLesoes] = useState<{ id: number; tipoLesao: string }[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchCondicaoVitimaData = async () => {
-      try {
-        const data = await fetchLesoes();
-        setCondicoesVitima(data);
-      } catch (error) {
-        console.error("Erro ao carregar condições da vítima:", error);
-        alert("Erro ao carregar condições da vítima");
-      } finally {
-        setLoadingCondicaoVitima(false);
-      }
-    };
-    fetchCondicaoVitimaData();
+    fetchLesoes().then(data => {
+      setLesoes(data || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
+
+  const addVitima = () => {
+    onChange([...vitimas, {
+      id: -Date.now(),
+      nome: "",
+      cpfVitima: "",
+      idade: undefined,
+      sexo: undefined,
+      etnia: "",
+      tipoAtendimento: "",
+      observacoes: "",
+      destinoVitima: "",
+      lesaoId: undefined,
+    }]);
+  };
+
+  const updateVitima = (id: number, patch: Partial<VitimaEdicao>) => {
+    onChange(vitimas.map(v => v.id === id ? { ...v, ...patch } : v));
+  };
+
+  const removeVitima = (id: number) => {
+    onChange(vitimas.filter(v => v.id !== id));
+  };
 
   return (
     <BoxInfo>
       <SectionTitle><UserIcon size={22} weight="fill" /> Vítimas e Pessoas Envolvidas</SectionTitle>
-      <BoxInfo>
-        <Grid>
-          {props.pessoas.length === 0 && (
-            <div style={{ gridColumn: "1 / -1", color: "#64748b", padding: 12, justifyContent: "center", display: "flex" }}>
-              Nenhuma pessoa adicionada
-            </div>
-          )}
-          {props.pessoas.map((p, idx) => (
-            <PersonCard key={p.id}>
-              <PersonCardHeader>
-                <strong>Pessoa {idx + 1}</strong>
-                <PersonRemoveButton
-                  type="button"
-                  onClick={() => props.removePessoa(p.id)}
-                >
-                  Remover
-                </PersonRemoveButton>
-              </PersonCardHeader>
-              <Grid>
+
+      {vitimas.length === 0 ? (
+        <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>
+          Nenhuma vítima adicionada
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: "1.5rem" }}>
+          {vitimas.map((v, i) => (
+            <div key={v.id} style={{
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: "12px",
+              padding: "1.5rem",
+              position: "relative"
+            }}>
+              <div style={{ 
+                position: "absolute", top: "12px", right: "12px", fontWeight: 600, color: "#475569" 
+              }}>
+                Vítima {i + 1}
+              </div>
+
+              <Grid style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }}>
                 <Field>
                   <label>Nome Completo</label>
-                  <input value={p.nome} onChange={(e) => props.updatePessoa(p.id, { nome: e.target.value })} />
-                </Field>
-                <Field>
-                  <label>Idade</label>
-                  <input
-                    type="number"
-                    value={p.idade ?? ""}
-                    onChange={(e) =>
-                      props.updatePessoa(p.id, { idade: e.target.value === "" ? undefined : Number(e.target.value) })
-                    }
-                  />
-                </Field>
-                <Field>
-                  <label>Sexo</label>
-                  <select
-                    value={p.sexo || ""}
-                    onChange={(e) => props.updatePessoa(p.id, { sexo: e.target.value })}
-                  >
-                    <option value="">Selecione o sexo</option>
-                    <option value="masculino">Masculino</option>
-                    <option value="feminino">Feminino</option>
-                    <option value="outro">Outro</option>
-                  </select>
-                </Field>
-                <Field>
-                  <label>Etnia</label>
-                  <select
-                    value={p.etnia || ""}
-                    onChange={(e) => props.updatePessoa(p.id, { etnia: e.target.value })}
-                  >
-                    <option value="">Selecione a etnia</option>
-                    <option value="branca">Branca</option>
-                    <option value="preta">Preta</option>
-                    <option value="parda">Parda</option>
-                    <option value="amarela">Amarela</option>
-                    <option value="indigena">Indígena</option>
-                    <option value="outro">Outro</option>
-                  </select>
+                  <input value={v.nome} onChange={e => updateVitima(v.id, { nome: e.target.value })} />
                 </Field>
                 <Field>
                   <label>CPF</label>
-                  <input
-                    type="text"
-                    placeholder="000.000.000-00"
-                    value={p.cpf}
-                    onChange={(e) => props.updatePessoa(p.id, { cpf: formatCPF(e.target.value) })}
-                    maxLength={14}
-                  />
+                  <input value={v.cpfVitima || ""} onChange={e => updateVitima(v.id, { cpfVitima: e.target.value })} placeholder="000.000.000-00" />
                 </Field>
                 <Field>
-                  <label>Tipo de Atendimento</label>
-                  <input value={p.tipoAtendimento || ""} onChange={(e) => props.updatePessoa(p.id, { tipoAtendimento: e.target.value })} />
+                  <label>Idade</label>
+                  <input type="number" value={v.idade || ""} onChange={e => updateVitima(v.id, { idade: e.target.value ? Number(e.target.value) : undefined })} />
                 </Field>
+
+                <Field>
+                  <label>Sexo</label>
+                  <select value={v.sexo || ""} onChange={e => updateVitima(v.id, { sexo: (e.target.value || undefined) as "M" | "F" | "O" | undefined })}>
+                    <option value="">Selecione</option>
+                    <option value="M">Masculino</option>
+                    <option value="F">Feminino</option>
+                    <option value="O">Outro</option>
+                  </select>
+                </Field>
+
+                <Field>
+                  <label>Etnia</label>
+                  <input value={v.etnia || ""} onChange={e => updateVitima(v.id, { etnia: e.target.value })} />
+                </Field>
+
                 <Field>
                   <label className="required">Condição</label>
-                  {loadingCondicaoVitima ? (
-                    <select disabled>
-                      <option>Carregando condição da vítima...</option>
-                    </select>
+                  {loading ? (
+                    <select disabled><option>Carregando...</option></select>
                   ) : (
                     <select
-                      value={p.condicao || ""}
-                      onChange={(e) => props.updatePessoa(p.id, { condicao: e.target.value })}
+                      value={v.lesaoId || ""}
+                      onChange={e => updateVitima(v.id, { lesaoId: Number(e.target.value) || undefined })}
                       required
                     >
                       <option value="">Selecione</option>
-                      {condicoesVitima.map((n) => (
-                        <option key={n.id} value={n.id}>
-                          {n.tipoLesao}
-                        </option>
+                      {lesoes.map(l => (
+                        <option key={l.id} value={l.id}>{l.tipoLesao}</option>
                       ))}
                     </select>
                   )}
                 </Field>
+
                 <Field>
-                  <label>Destino da Vítima</label>
-                  <input
-                    value={p.destinoVitima || ""}
-                    onChange={(e) => props.updatePessoa(p.id, { destinoVitima: e.target.value })}
-                  />
+                  <label>Destino</label>
+                  <input value={v.destinoVitima || ""} onChange={e => updateVitima(v.id, { destinoVitima: e.target.value })} />
                 </Field>
+
+                <Field>
+                  <label>Tipo de Atendimento</label>
+                  <input value={v.tipoAtendimento || ""} onChange={e => updateVitima(v.id, { tipoAtendimento: e.target.value })} />
+                </Field>
+
                 <FullField>
                   <label>Observações</label>
                   <textarea
-                    placeholder="Anotações sobre a pessoa, estado, etc."
-                    value={p.observacoes || ""}
-                    onChange={(e) => props.updatePessoa(p.id, { observacoes: e.target.value })}
+                    rows={2}
+                    value={v.observacoes || ""}
+                    onChange={e => updateVitima(v.id, { observacoes: e.target.value })}
+                    placeholder="Estado da vítima, sinais vitais, etc."
                   />
                 </FullField>
               </Grid>
-            </PersonCard>
+
+              <div style={{ marginTop: "1rem", textAlign: "right" }}>
+                <Button text="Remover Vítima" variant="danger" onClick={() => removeVitima(v.id)} />
+              </div>
+            </div>
           ))}
-          <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "center" }}>
-            <Button text="+ Adicionar Pessoa" onClick={props.addPessoa} />
-          </div>
-        </Grid>
-      </BoxInfo>
+        </div>
+      )}
+
+      <div style={{ marginTop: "1.5rem", textAlign: "center" }}>
+        <Button text="+ Adicionar Vítima" onClick={addVitima} variant="primary" />
+      </div>
     </BoxInfo>
   );
 }
