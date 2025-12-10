@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 import {
     ContainerPainel,
     PageTopHeader,
@@ -84,6 +85,8 @@ interface Lesao {
 export function EditarOcorrencia() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const auth = useContext(AuthContext);
+    const usuarioLogadoId = auth?.user?.id;
 
     // Estados para os dados da ocorrência
     const [loading, setLoading] = useState(true);
@@ -150,9 +153,15 @@ export function EditarOcorrencia() {
                 setStatusAtendimento(normalizeStatusFromBackend(data.statusAtendimento));
                 setMotivoNaoAtendimento(data.motivoNaoAtendimento || "");
                 setDescricao(data.descricao || "");
+                const subgrupoIdInicial =
+                    data.subgrupoOcorrenciaId?.toString() ||
+                    data.subgrupoOcorrencia?.id?.toString() ||
+                    (data as any)?.SubgrupoOcorrencia?.id?.toString() ||
+                    "";
+
                 setNatureza(data.naturezaOcorrencia?.id?.toString() || "");
                 setGrupo(data.grupoOcorrencia?.id?.toString() || "");
-                setSubgrupo(data.subgrupoOcorrencia?.id?.toString() || "");
+                setSubgrupo(subgrupoIdInicial);
                 setFormaAcionamento(mapFormaAcionamentoFromBackend(data.formaAcionamento || ""));
                 setEventoEspecial(!!data.eventoEspecial);
                 setUnidade(data.unidadeOperacional?.id?.toString() || "");
@@ -231,27 +240,24 @@ export function EditarOcorrencia() {
         if (id) {
             fetchOcorrencia();
             fetchCombos();
-
-            // Carregar equipe
-            fetchEquipeOcorrencia(id).then(equipeData => {
-                setEquipe(equipeData || []);
-            }).catch(error => {
-                console.error('Erro ao carregar equipe:', error);
-            });
         }
     }, [id]);
 
+    // Carregar equipe
     useEffect(() => {
         if (!id) return;
 
-        fetchEquipeOcorrencia(id)
-            .then((equipeData) => {
-                setEquipe(equipeData || []);
-            })
-            .catch((error) => {
-                console.error("Erro ao carregar equipe:", error);
-            });
+        console.log("🔍 Carregando equipe da ocorrência:", id);
+        fetchEquipeOcorrencia(id).then(equipeData => {
+            console.log("📥 Equipe carregada do backend:", equipeData?.map(u => ({ id: u.id, nome: u.nome })));
+            // Carregar equipe sem filtrar - se o criador estiver lá, é porque foi adicionado manualmente
+            setEquipe(equipeData || []);
+        }).catch(error => {
+            console.error('❌ Erro ao carregar equipe:', error);
+        });
     }, [id]);
+
+
 
     // Funções de mapeamento normalizadas
     const normalizeStatusFromBackend = (status: string | undefined): string => {
@@ -378,7 +384,7 @@ export function EditarOcorrencia() {
                 formaAcionamento: mapFormaAcionamentoToBackend(formaAcionamento),
                 naturezaOcorrenciaId: natureza ? Number(natureza) : undefined,
                 grupoOcorrenciaId: grupo ? Number(grupo) : undefined,
-                subgrupoOcorrenciaId: subgrupo ? Number(subgrupo) : undefined,
+                subgrupoOcorrenciaId: subgrupo ? Number(subgrupo) : (subgrupo === "" ? null : undefined),
                 viaturaId: numeracaoViatura ? Number(numeracaoViatura) : undefined,
                 unidadeOperacionalId: unidade ? Number(unidade) : undefined,
                 eventoEspecialId: eventoEspecial ? 1 : undefined,
@@ -399,11 +405,7 @@ export function EditarOcorrencia() {
 
             if (!id) throw new Error('ID da ocorrência não encontrado');
 
-            console.log('Payload sendo enviado:', JSON.stringify(payload, null, 2));
-            console.log('ID da ocorrência:', id);
-
             await putOcorrencia(Number(id), payload);
-
             // Deletar anexos removidos no backend
             for (const anexoId of anexosRemovidos) {
                 try {
@@ -415,18 +417,25 @@ export function EditarOcorrencia() {
 
             // === EQUIPE: sincronizar apenas os que ainda não estão no backend ===
             const equipeAtual = await fetchEquipeOcorrencia(id); // recarrega do backend para comparar
-            const equipeAtualIds = new Set(equipeAtual.map((u: Usuario) => u.id));
+            console.log("=== SINCRONIZAÇÃO DE EQUIPE ===");
+            console.log("Equipe BACKEND ANTES:", equipeAtual.map(u => ({ id: u.id, nome: u.nome })));
+            console.log("Equipe LOCAL (após edição):", equipe.map(u => ({ id: u.id, nome: u.nome })));
+            console.log("Usuário logado:", { id: usuarioLogadoId });
+            
+            const equipeAtualIds = new Set(equipeAtual.map(u => u.id));
 
             // Adiciona apenas os novos membros
             for (const membro of equipe) {
                 if (membro.id && !equipeAtualIds.has(membro.id)) {
                     try {
+                        console.log(`➕ Adicionando usuário ${membro.id} (${membro.nome})`);
                         await postOcorrenciaUsuario({
                             ocorrenciaId: Number(id),
                             userId: membro.id,
                         });
+                        console.log(`✅ Usuário ${membro.id} adicionado com sucesso`);
                     } catch (error) {
-                        console.warn(`Erro ao adicionar usuário ${membro.id}:`, error);
+                        console.warn(`❌ Erro ao adicionar usuário ${membro.id}:`, error);
                     }
                 }
             }
@@ -436,12 +445,23 @@ export function EditarOcorrencia() {
             for (const membroBackend of equipeAtual) {
                 if (membroBackend.id && !equipeLocalIds.has(membroBackend.id)) {
                     try {
+                        console.log(`🗑️ Removendo usuário ${membroBackend.id} (${membroBackend.nome}) do backend`);
                         await deletePessoaEquipeOcorrencia(Number(id), membroBackend.id);
+                        console.log(`✅ Usuário ${membroBackend.id} removido com sucesso`);
                     } catch (error) {
-                        console.warn(`Erro ao remover usuário ${membroBackend.id}:`, error);
+                        console.error(`❌ Erro ao remover usuário ${membroBackend.id}:`, error);
+                        
+                        // Se for erro de "não encontrada", significa que já não está vinculado
+                        const errorStr = error instanceof Error ? error.message : JSON.stringify(error);
+                        if (errorStr.includes("não encontrada") || errorStr.includes("404") || errorStr.includes("not found")) {
+                            console.warn(`⚠️ Usuário ${membroBackend.id} (${membroBackend.nome}) não estava vinculado - ignorando erro`);
+                        } else {
+                            console.warn(`⚠️ Aviso ao remover usuário ${membroBackend.id}:`, error);
+                        }
                     }
                 }
             }
+            console.log("=== FIM SINCRONIZAÇÃO DE EQUIPE ===");
 
             // === VÍTIMAS: sincronizar com POST, PUT e DELETE (VERSÃO CORRETA E FINAL) ===
 try {
@@ -597,7 +617,11 @@ try {
                                     <label className="required">Natureza da Ocorrência</label>
                                     <select
                                         value={natureza}
-                                        onChange={(e) => setNatureza(e.target.value)}
+                                        onChange={(e) => {
+                                            setNatureza(e.target.value);
+                                            setGrupo(""); // reseta grupo
+                                            setSubgrupo(""); // reseta subgrupo
+                                        }}
                                         required
                                     >
                                         <option value="">Selecione a natureza</option>
@@ -611,7 +635,10 @@ try {
                                     <label className="required">Grupo da Ocorrência</label>
                                     <select
                                         value={grupo}
-                                        onChange={(e) => setGrupo(e.target.value)}
+                                        onChange={(e) => {
+                                            setGrupo(e.target.value);
+                                            setSubgrupo(""); // reseta subgrupo quando grupo muda
+                                        }}
                                         required
                                     >
                                         <option value="">Selecione o grupo</option>
@@ -628,9 +655,12 @@ try {
                                     <select
                                         value={subgrupo}
                                         onChange={(e) => setSubgrupo(e.target.value)}
+                                        disabled={!grupo}
                                         required
                                     >
-                                        <option value="">Selecione o subgrupo</option>
+                                        <option value="">
+                                            {grupo ? "Selecione o subgrupo" : "Selecione um grupo primeiro"}
+                                        </option>
                                         {subgruposOcorrencias
                                             .filter(s => String(s.grupoOcorrencia?.id) === String(grupo))
                                             .map((s) => (
@@ -732,7 +762,10 @@ try {
                             setUnidade={setUnidade}
                             numeracaoViatura={numeracaoViatura}
                             setNumeracaoViatura={setNumeracaoViatura}
-                            onTeamMembersChange={setEquipe}
+                            onTeamMembersChange={(newTeam) => {
+                                console.log("🔄 EditarOcorrencia recebeu mudança de equipe:", newTeam.map(u => ({ id: u.id, nome: u.nome })));
+                                setEquipe(newTeam);
+                            }}
                             initialTeamMembers={equipe}
                         />
                     </GridColumn>

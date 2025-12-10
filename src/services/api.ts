@@ -4,10 +4,6 @@
 import { uploadToCloudinary } from "../utils/uploadToCloudinary";
 
 const BASE_URL = "https://backendpicbmpe-production-d86d.up.railway.app";
-const OCORRENCIAS_CACHE_TTL_MS = 60 * 1000; // 1 min de cache para evitar recarregamentos frequentes
-
-type CacheEntry<T> = { data: T; ts: number } | null;
-let ocorrenciasCache: CacheEntry<OcorrenciaAPI[]> = null;
 
 /** -------------------------
  * Tipagens básicas (podem ampliar conforme a API)
@@ -174,17 +170,9 @@ export async function login(matricula: string, senha: string): Promise<any> {
 }
 
 /** Buscar todas as ocorrências (sem filtros complexos) */
-export async function fetchOcorrencias(useCache = true): Promise<OcorrenciaAPI[]> {
+export async function fetchOcorrencias(): Promise<OcorrenciaAPI[]> {
   try {
-    const now = Date.now();
-    if (useCache && ocorrenciasCache && now - ocorrenciasCache.ts < OCORRENCIAS_CACHE_TTL_MS) {
-      return ocorrenciasCache.data;
-    }
-
     const data = await requestJson(`${BASE_URL}/ocorrencias`);
-    if (useCache && Array.isArray(data)) {
-      ocorrenciasCache = { data, ts: now };
-    }
     return data;
   } catch (error) {
     console.error("Erro na API de ocorrências:", error);
@@ -248,7 +236,6 @@ export async function postOcorrencia(payload: any): Promise<any> {
       method: "POST",
       body: JSON.stringify(payload),
     });
-    ocorrenciasCache = null; // invalida cache
     return result;
   } catch (error) {
     console.error("Erro na API de post ocorrência:", error);
@@ -263,7 +250,6 @@ export async function postOcorrenciaComTimeout(payload: any, timeout = 30000): P
       method: "POST",
       body: JSON.stringify(payload),
     }, timeout);
-    ocorrenciasCache = null;
     return result;
   } catch (error) {
     console.error("Erro na API de post ocorrência com timeout:", error);
@@ -280,7 +266,6 @@ export async function updateOcorrenciaStatus(id: string | number, payload: any):
       method: "PATCH",
       body: JSON.stringify(payload),
     });
-    ocorrenciasCache = null;
     return result;
   } catch (error) {
     console.error(`Erro ao atualizar ocorrência ${id}:`, error);
@@ -843,6 +828,7 @@ export async function putOcorrencia(id: number, payload: any): Promise<any> {
     const url = `${BASE_URL}/ocorrencias/${encodeURIComponent(String(id))}`;
     console.log(`[putOcorrencia] Enviando PUT para: ${url}`);
     console.log(`[putOcorrencia] Payload:`, payload);
+    console.log(`[putOcorrencia] Subgrupo no payload:`, payload.subgrupoOcorrenciaId);
     
     const result = await requestJson(url, {
       method: "PUT",
@@ -850,7 +836,7 @@ export async function putOcorrencia(id: number, payload: any): Promise<any> {
     });
     
     console.log(`[putOcorrencia] Sucesso:`, result);
-    ocorrenciasCache = null;
+    console.log(`[putOcorrencia] Subgrupo retornado:`, result.subgrupoOcorrencia);
     return result;
   } catch (error) {
     console.error(`Erro na API de put ocorrência ${id}:`, error);

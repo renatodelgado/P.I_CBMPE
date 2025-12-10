@@ -30,6 +30,8 @@ interface EquipesViaturasProps {
 }
 
 export function EquipesViaturas(props: EquipesViaturasProps) {
+  const { initialTeamMembers, onTeamMembersChange } = props;
+  
   const [unidadesOperacionais, setUnidadesOperacionais] = useState<
     { id: number; nome: string; sigla: string; pontoBase: string }[]
   >([]);
@@ -39,12 +41,18 @@ export function EquipesViaturas(props: EquipesViaturasProps) {
   // busca / seleção de equipe (agora dentro deste componente)
   const [allUsers, setAllUsers] = useState<Usuario[]>([]);
   const [teamQuery, setTeamQuery] = useState("");
-const [teamMembers, setTeamMembers] = useState<Usuario[]>(
-    props.initialTeamMembers || []
+  const [teamMembers, setTeamMembers] = useState<Usuario[]>(
+    initialTeamMembers || []
   );
+
+  // Sincronizar com initialTeamMembers apenas no carregamento inicial
   useEffect(() => {
-    props.onTeamMembersChange?.(teamMembers);
-  }, [teamMembers, props]);
+    if (initialTeamMembers && initialTeamMembers.length > 0) {
+      console.log("🔄 Carregando equipe inicial:", initialTeamMembers);
+      setTeamMembers(initialTeamMembers);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Intencional: carregar apenas uma vez no mount
 
   // Carrega usuários apenas uma vez
   useEffect(() => {
@@ -60,10 +68,11 @@ const [teamMembers, setTeamMembers] = useState<Usuario[]>(
     return () => { mounted = false; };
   }, []);
 
-  // notificar o componente pai quando a equipe mudar
+  // Notificar o componente pai quando a equipe mudar
   useEffect(() => {
-    props.onTeamMembersChange?.(teamMembers);
-  }, [props, teamMembers]);
+    console.log("📤 Notificando pai sobre mudança na equipe:", teamMembers.map(u => ({ id: u.id, nome: u.nome })));
+    onTeamMembersChange?.(teamMembers);
+  }, [teamMembers, onTeamMembersChange]);
 
   const filteredUsers = allUsers
     .filter(u => !teamMembers.find(m => m.id === u.id))
@@ -78,13 +87,23 @@ const [teamMembers, setTeamMembers] = useState<Usuario[]>(
 
   const handleAddToTeam = (user: Usuario) => {
     if (!user || teamMembers.find(m => m.id === user.id)) return;
-    setTeamMembers(prev => [...prev, user]);
+    console.log("➕ Adicionando à equipe local:", user);
+    setTeamMembers(prev => {
+      const newTeam = [...prev, user];
+      console.log("📋 Nova equipe local:", newTeam.map(u => ({ id: u.id, nome: u.nome })));
+      return newTeam;
+    });
     setTeamQuery("");
   };
 
   const handleRemoveTeamMember = (id?: number) => {
     if (!id) return;
-    setTeamMembers(prev => prev.filter(m => m.id !== id));
+    console.log("🗑️ Removendo da equipe local:", id);
+    setTeamMembers(prev => {
+      const newTeam = prev.filter(m => m.id !== id);
+      console.log("📋 Nova equipe local após remoção:", newTeam.map(u => ({ id: u.id, nome: u.nome })));
+      return newTeam;
+    });
   };
 
   useEffect(() => {

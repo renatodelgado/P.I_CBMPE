@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
 import {
   ContainerPainel,
   PageTopHeader,
@@ -19,7 +20,7 @@ import {
 import { Breadcrumb } from "../../components/Breadcrumb";
 import { Button } from "../../components/Button";
 import { EyeIcon, FileTextIcon, UserIcon, PaperclipIcon, PencilIcon, FireTruckIcon, XIcon } from "@phosphor-icons/react";
-import { getOcorrenciaPorId, fetchVitimasPorOcorrencia, putOcorrencia, fetchEquipeOcorrencia } from "../../services/api";
+import { getOcorrenciaPorId, fetchVitimasPorOcorrencia, putOcorrencia, fetchEquipeOcorrencia, fetchSubgruposOcorrencias } from "../../services/api";
 import { formatarDataHora, getStatusColor } from "../../utils/ocorrencias";
 import { LocalizacaoView } from "./sections/LocalizacaoView";
 import type { Usuario } from "../../services/api";
@@ -115,6 +116,9 @@ interface OcorrenciaDetalhes {
 export function DetalhesOcorrencia() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const auth = useContext(AuthContext);
+  const usuarioLogadoId = auth?.user?.id;
+  
   const [ocorrencia, setOcorrencia] = useState<OcorrenciaDetalhes | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -186,6 +190,59 @@ export function DetalhesOcorrencia() {
         }
         
         console.log('Dados recebidos:', data);
+        console.log('subgrupoOcorrenciaId do backend:', data.subgrupoOcorrenciaId);
+        console.log('subgrupoOcorrencia do backend:', data.subgrupoOcorrencia);
+        console.log('SubgrupoOcorrencia (maiúsculo) do backend:', (data as Record<string, unknown>).SubgrupoOcorrencia);
+
+        // Resolver subgrupo considerando respostas com chave maiúscula/minúscula e, se necessário, fazendo fetch da lista
+        type SubgrupoCandidate = { id?: number; nome?: string } | null | undefined;
+        type SubgrupoResolved = { id: number; nome: string } | undefined;
+
+        // Verificar SubgrupoOcorrencia (maiúscula) - mas só usar se tiver id
+        const subgrupoMaiusculo = (data as { SubgrupoOcorrencia?: SubgrupoCandidate }).SubgrupoOcorrencia;
+        const subgrupoMinusculo = data.subgrupoOcorrencia || (data as { subgrupoOcorrencia?: SubgrupoCandidate }).subgrupoOcorrencia;
+        
+        // Preferir o que tiver id válido
+        const subgrupoResp: SubgrupoCandidate = (subgrupoMaiusculo?.id ? subgrupoMaiusculo : subgrupoMinusculo);
+
+        const subgrupoId = (data as { subgrupoOcorrenciaId?: number }).subgrupoOcorrenciaId
+          ?? subgrupoResp?.id;
+
+        console.log('subgrupoResp extraído:', subgrupoResp);
+        console.log('subgrupoId extraído:', subgrupoId);
+
+        let subgrupoFinal: SubgrupoResolved = undefined;
+
+        // Se o backend devolveu o objeto e o ID bate com o ID retornado, usa direto.
+        if (subgrupoId && subgrupoResp?.id && Number(subgrupoResp.id) === Number(subgrupoId) && subgrupoResp.nome) {
+          subgrupoFinal = { id: Number(subgrupoId), nome: subgrupoResp.nome };
+          console.log('Subgrupo resolvido pelo objeto do backend:', subgrupoFinal);
+        }
+
+        // Se ainda não resolvido, tenta buscar da lista completa pelo ID enviado/retornado.
+        if (!subgrupoFinal && subgrupoId) {
+          try {
+            console.log('Buscando subgrupo na lista pelo ID:', subgrupoId);
+            const subgrupos = await fetchSubgruposOcorrencias();
+            console.log('Total de subgrupos carregados:', subgrupos?.length);
+            const encontrado = (subgrupos || []).find((s) => Number((s as { id?: number }).id) === Number(subgrupoId)) as SubgrupoCandidate;
+            console.log('Subgrupo encontrado na lista:', encontrado);
+            if (encontrado?.id && encontrado.nome) {
+              subgrupoFinal = { id: Number(encontrado.id), nome: encontrado.nome };
+              console.log('Subgrupo resolvido pela lista:', subgrupoFinal);
+            }
+          } catch (err) {
+            console.warn('Não foi possível carregar subgrupos para resolver nome:', err);
+          }
+        }
+
+        // Se não encontramos pelo ID mas veio um objeto com nome, usa-o como último recurso.
+        if (!subgrupoFinal && subgrupoResp?.id && subgrupoResp.nome) {
+          subgrupoFinal = { id: Number(subgrupoResp.id), nome: subgrupoResp.nome };
+          console.log('Subgrupo resolvido como último recurso:', subgrupoFinal);
+        }
+
+        console.log('subgrupoFinal DEFINITIVO:', subgrupoFinal);
 
         const vitimasData = await fetchVitimasPorOcorrencia(data.id);
         setVitimas(vitimasData || []);
@@ -208,7 +265,7 @@ export function DetalhesOcorrencia() {
             pontoBase: data.naturezaOcorrencia.pontoBase || '' 
           } : undefined,
           grupoOcorrencia: data.grupoOcorrencia || undefined,
-          subgrupoOcorrencia: data.subgrupoOcorrencia || undefined,
+          subgrupoOcorrencia: subgrupoFinal,
           viatura: data.viatura ? { 
             id: data.viatura.id || 0, 
             tipo: data.viatura.tipo || '', 
@@ -248,7 +305,7 @@ export function DetalhesOcorrencia() {
     if (id) {
       fetchOcorrenciaDetalhes();
     }
-  }, [id]);
+  }, [id, usuarioLogadoId]);
 
   const handleEditar = () => {
     navigate(`/ocorrencias/editar/${id}`);
