@@ -42,3 +42,8 @@
   color: #888;
 }
 
+.leaflet-heatmap-layer {
+  opacity: 0.5; /* Opacidade geral da camada toda – multiplica com o alpha do gradient */
+  mix-blend-mode: multiply; /* Opcional: modo de mesclagem que ajuda a "misturar" melhor com o mapa base */
+}
+

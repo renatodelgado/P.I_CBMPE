@@ -14,13 +14,14 @@ import { PerfilPage } from "./pages/usuarios/Perfil";
 import { Sobre } from "./pages/Sobre";
 import { DetalhesOcorrencia } from "./pages/ocorrencias/DetalheOcorrencia";
 import { EditarOcorrencia } from "./pages/ocorrencias/EditarOcorrencia";
+// Predições agora são exibidas na mesma tela do Dashboard (aba interna)
 
 function App() {
   return (
      <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login/>}/>
-        <Route path="/dashboard" element={<RequireAuth><Header/><DashboardOperacional/></RequireAuth>} />
+<Route path="/dashboard" element={<RequireAuth><Header/><DashboardOperacional /></RequireAuth>} />
         <Route path="/ocorrencias" element={<RequireAuth><Header/><ListaOcorrencias/></RequireAuth>} />
         <Route path="/auditoria" element={<RequireAuth><Header/><Auditoria/></RequireAuth>} />
         <Route path="/usuarios" element={<RequireAuth><Header/><GestaoUsuarios/></RequireAuth>} />

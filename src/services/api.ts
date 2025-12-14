@@ -740,6 +740,45 @@ export async function fetchDadosHeatmap(periodo?: { inicio: string; fim: string 
 }
 
 /** -------------------------
+ * Previsões
+ * ------------------------- */
+
+export interface PrevisaoItem {
+  data: string;
+  previsao: number;
+}
+
+export interface PrevisaoResponse {
+  municipio: string;
+  previsoes: PrevisaoItem[];
+}
+
+/**
+ * Busca previsões de ocorrências para um município específico
+ * @param municipio - Nome do município (ex: "Recife", "Jaboatão dos Guararapes")
+ * @param dataInicio - Data de início no formato YYYY-MM-DD
+ * @param dias - Número de dias para previsão (padrão: 7)
+ */
+export async function fetchPrevisoes(
+  municipio: string,
+  dataInicio: string,
+  dias: number = 7
+): Promise<PrevisaoResponse | null> {
+  try {
+    const params = new URLSearchParams({
+      municipio,
+      data_inicio: dataInicio,
+      dias: String(dias),
+    });
+    const url = `${BASE_URL}/previsao?${params.toString()}`;
+    return await requestJson(url);
+  } catch (error) {
+    console.error("Erro na API de previsões:", error);
+    return null;
+  }
+}
+
+/** -------------------------
  * Get log auditoria
  * ------------------------- */
 

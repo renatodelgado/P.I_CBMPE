@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import styled, { keyframes } from "styled-components";
 import { AuditStatCard, BoxInfo } from "../../components/EstilosPainel.styles";
 
@@ -10,7 +11,6 @@ const subtleShadow = "rgba(15, 23, 42, 0.04)";
 
 const primaryBlue = "#5d3bf6";
 const primaryGreen = "#0EA5E9";
-const primaryPink = "#EC4899";
 const successGreen = "#10B981";
 const warningOrange = "#F59E0B";
 const errorRed = "#EF4444";
@@ -19,8 +19,29 @@ const accentPurple = "#8B5CF6";
 const bgLight = "#F3F4F6";
 const bgHover = "#F1F8FF";
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const barColors = [primaryGreen, accentPurple, primaryPink, errorRed, warningOrange, successGreen];
+
+export const naturezaColors = [
+  "#4C6EF5",
+  "#5C7CFA",
+  "#748FFC",
+  "#91A7FF",
+  "#BAC8FF",
+];
+
+export const municipioColors = [
+  "#2F9E44",
+  "#37B24D",
+  "#51CF66",
+  "#8CE99A",
+  "#B2F2BB",
+];
+
+export const neutralColors = [
+  "#64748B",
+  "#94A3B8",
+  "#CBD5E1",
+];
+
 
 /* small hover float animation */
 const floatUp = keyframes`
