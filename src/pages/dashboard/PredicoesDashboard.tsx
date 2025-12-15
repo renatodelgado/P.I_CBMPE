@@ -2,9 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  Legend,
   AreaChart, Area,
-  PieChart, Pie, Cell
+  PieChart, Pie, Cell, Legend
 } from "recharts";
 import { fetchPrevisoes } from "../../services/api";
 import { fetchMunicipiosPE as fetchMunicipiosPE_IBGE } from "../../services/municipio_bairro";
@@ -30,6 +29,7 @@ interface ClusterResponse {
 interface RegressaoResponse {
   timestamp: string;
   valor: number;
+  [key: string]: string | number;
 }
 
 interface MunicipioPredicao {
@@ -63,6 +63,8 @@ export default function PredicoesDashboard() {
   const [loading, setLoading] = useState(false);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [showDialog, setShowDialog] = useState(false);
+  const [pendingMunicipios, setPendingMunicipios] = useState<Set<string>>(new Set());
+  const [lastRejectedTime, setLastRejectedTime] = useState<Record<string, number>>({});
 
   useEffect(() => {
     fetchMunicipiosPE_IBGE().then(setMunicipios).catch(() => setMunicipios([]));
@@ -90,12 +92,23 @@ export default function PredicoesDashboard() {
           });
         });
         const dateSums = new Map<string, number>();
+        const dateByMun = new Map<string, Map<string, number>>();
         allPrevisoes.forEach((p) => {
           dateSums.set(p.data, (dateSums.get(p.data) || 0) + p.previsao);
+          if (!dateByMun.has(p.data)) {
+            dateByMun.set(p.data, new Map());
+          }
+          const munMap = dateByMun.get(p.data)!;
+          munMap.set(p.municipio, (munMap.get(p.municipio) || 0) + p.previsao);
         });
-        const regressao: RegressaoResponse[] = Array.from(dateSums, ([timestamp, valor]) => ({ timestamp, valor })).sort(
-          (a, b) => a.timestamp.localeCompare(b.timestamp)
-        );
+        const regressao: RegressaoResponse[] = Array.from(dateSums, ([timestamp, valor]) => {
+          const munMap = dateByMun.get(timestamp) || new Map();
+          const obj: RegressaoResponse = { timestamp, valor };
+          munMap.forEach((munValor, municipio) => {
+            obj[`${municipio}_valor`] = munValor;
+          });
+          return obj;
+        }).sort((a, b) => a.timestamp.localeCompare(b.timestamp));
         const weekdaySums = new Map<number, number>();
         allPrevisoes.forEach((p) => {
           const d = new Date(p.data);
@@ -140,7 +153,31 @@ export default function PredicoesDashboard() {
   };
 
   const tryAddMunicipio = async (nome: string) => {
-    if (!nome || selectedMunicipios.includes(nome)) return;
+    if (!nome) return;
+    
+    const normalizedInput = nome.toLowerCase().trim();
+    const isDuplicate = selectedMunicipios.some(m => m.toLowerCase().trim() === normalizedInput);
+    const isPending = pendingMunicipios.has(normalizedInput);
+    
+    if (isDuplicate || isPending) {
+      const now = Date.now();
+      const lastRejected = lastRejectedTime[normalizedInput] || 0;
+      const timeSinceLastReject = now - lastRejected;
+      
+      // Mostrar alerta apenas se tentou novamente após 5 segundos
+      if (lastRejected > 0 && timeSinceLastReject > 5000) {
+        setWarnings((prev) => [...prev, `O município de ${normalizeMunicipio(nome)} já foi selecionado.`]);
+        setShowDialog(true);
+      }
+      
+      // Atualizar timestamp da última rejeição
+      setLastRejectedTime((prev) => ({ ...prev, [normalizedInput]: now }));
+      setSearchTerm("");
+      return;
+    }
+    
+    setPendingMunicipios((prev) => new Set([...prev, normalizedInput]));
+    
     try {
       const resp = await fetchPrevisoes(nome, dataInicio, dias) as (PrevisaoResponse | { erro?: string } | null);
       if (!resp || !Array.isArray((resp as PrevisaoResponse)?.previsoes)) {
@@ -149,6 +186,11 @@ export default function PredicoesDashboard() {
         console.log(`Previsão inválida para ${nome}: ${msg}`);
         setShowDialog(true);
         setSearchTerm("");
+        setPendingMunicipios((prev) => {
+          const updated = new Set(prev);
+          updated.delete(normalizedInput);
+          return updated;
+        });
         return;
       }
       setSelectedMunicipios((prev) => [...prev, nome]);
@@ -157,6 +199,11 @@ export default function PredicoesDashboard() {
       setWarnings((prev) => [...prev, `Falha ao validar município: ${normalizeMunicipio(nome)}.`]);
       setShowDialog(true);
       setSearchTerm("");
+      setPendingMunicipios((prev) => {
+        const updated = new Set(prev);
+        updated.delete(normalizedInput);
+        return updated;
+      });
     }
   };
 
@@ -177,6 +224,19 @@ export default function PredicoesDashboard() {
       .filter((m) => m.nome.toLocaleLowerCase("pt-BR").includes(q))
       .slice(0, 8);
   }, [municipios, searchTerm]);
+
+  const formatNumber = (num: number): string => {
+    return (Math.round(num * 100) / 100).toFixed(2);
+  };
+
+  const formatDateWithDay = (dateString: string): { formatted: string; dayOfWeek: string } => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    const formatted = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+    const daysOfWeek = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const dayOfWeek = daysOfWeek[date.getDay()];
+    return { formatted, dayOfWeek };
+  };
 
   const renderPercentLabel = ({ percent }: { percent?: number }) => `${Math.round(((percent || 0) * 100))}%`;
 
@@ -261,7 +321,14 @@ export default function PredicoesDashboard() {
                 <MunicipioTag key={m}>
                   {m}
                   <MunicipioTagButton
-                    onClick={() => setSelectedMunicipios(selectedMunicipios.filter((s) => s !== m))}
+                    onClick={() => {
+                      setSelectedMunicipios(selectedMunicipios.filter((s) => s !== m));
+                      setPendingMunicipios((prev) => {
+                        const updated = new Set(prev);
+                        updated.delete(m.toLowerCase().trim());
+                        return updated;
+                      });
+                    }}
                     title="Remover município"
                   >
                     ✕
@@ -309,7 +376,7 @@ export default function PredicoesDashboard() {
                     borderRadius: 8,
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                   }}
-                  formatter={(value) => [`${value} ocorrências`, "Previsão"]}
+                  formatter={(value) => [`${formatNumber(Number(value))} ocorrências`, "Previsão"]}
                 />
                 <Bar
                   dataKey="valor"
@@ -354,7 +421,7 @@ export default function PredicoesDashboard() {
                       <Legend />
                       <Tooltip
                         formatter={(value, name) => [
-                          `${value} ocorrências (${Math.round((Number(value) as number / (total || 1)) * 100)}%)`,
+                          `${formatNumber(Number(value) as number)} ocorrências (${Math.round((Number(value) as number / (total || 1)) * 100)}%)`,
                           name as string,
                         ]}
                         contentStyle={{
@@ -373,13 +440,24 @@ export default function PredicoesDashboard() {
 
           {/* 3 - Regressão (full width) */}
           <ChartCard style={{ gridColumn: "1 / -1" }}>
-            <ChartTitle>Previsão de demanda consolidada</ChartTitle>
+            {(() => {
+              return (
+                <>
+                  <ChartTitle>Previsão de demanda consolidada</ChartTitle>
+                  
+                </>
+              );
+            })()}
             <ResponsiveContainer width="100%" height={320}>
               <AreaChart data={data.regressao} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
                 <XAxis
                   dataKey="timestamp"
                   tick={{ fill: "#6B7280", fontSize: 12 }}
                   axisLine={{ stroke: "#E5E7EB" }}
+                  tickFormatter={(timestamp: string) => {
+                    const { formatted } = formatDateWithDay(timestamp);
+                    return formatted;
+                  }}
                 />
                 <YAxis
                   tick={{ fill: "#6B7280", fontSize: 12 }}
@@ -392,14 +470,82 @@ export default function PredicoesDashboard() {
                     borderRadius: 8,
                     boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                   }}
-                  formatter={(value) => [`${value} ocorrências`, "Previsão"]}
+                  content={({ active, payload }) => {
+                    if (!active || !payload || payload.length === 0) return null;
+                    
+                    // Ordenar payload por valor em ordem decrescente
+                    const sortedPayload = [...payload].sort((a, b) => {
+                      return (Number(b.value) || 0) - (Number(a.value) || 0);
+                    });
+                    
+                    return (
+                      <div style={{
+                        backgroundColor: "#fff",
+                        border: "1px solid #E5E7EB",
+                        borderRadius: 8,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                        padding: "8px 12px"
+                      }}>
+                        {sortedPayload.map((entry, index) => {
+                          const municipioName = entry.name === "Consolidado" ? "Total" : entry.name;
+                          return (
+                            <div key={index} style={{ 
+                              color: entry.color,
+                              marginBottom: index < sortedPayload.length - 1 ? "4px" : "0"
+                            }}>
+                              <strong>{municipioName}:</strong> {formatNumber(Number(entry.value))} ocorrências
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  }}
                 />
+                <Legend />
+                {(() => {
+                  const allMunicipios = new Set<string>();
+                  data.regressao.forEach((item: RegressaoResponse) => {
+                    Object.keys(item).forEach((key) => {
+                      if (key.endsWith("_valor")) {
+                        const municipio = key.replace("_valor", "");
+                        allMunicipios.add(municipio);
+                      }
+                    });
+                  });
+                  // Calcular total de ocorrências por município para ordenar
+                  const municipioTotals = Array.from(allMunicipios).map((municipio) => {
+                    const total = data.regressao.reduce((sum, item) => {
+                      return sum + (Number(item[`${municipio}_valor`]) || 0);
+                    }, 0);
+                    return { municipio, total };
+                  });
+                  // Ordenar em ordem decrescente
+                  municipioTotals.sort((a, b) => b.total - a.total);
+                  const municipiosList = municipioTotals.map(m => m.municipio);
+                  
+                  return municipiosList.map((municipio, idx) => (
+                    <Area
+                      key={municipio}
+                      type="monotone"
+                      dataKey={`${municipio}_valor`}
+                      name={normalizeMunicipio(municipio)}
+                      stroke={municipioColors[idx % municipioColors.length]}
+                      fill={municipioColors[idx % municipioColors.length]}
+                      fillOpacity={0.08}
+                      strokeOpacity={0.4}
+                      isAnimationActive={true}
+                    />
+                  ));
+                })()}
                 <Area
                   type="monotone"
                   dataKey="valor"
+                  name="Consolidado"
                   stroke="#4C6EF5"
                   fill="#5d3bf6"
                   fillOpacity={0.15}
+                  strokeOpacity={1}
+                  strokeWidth={2}
                   isAnimationActive={true}
                 />
               </AreaChart>
