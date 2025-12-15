@@ -5,8 +5,6 @@ import {
   PageTitle,
   PageSubtitle,
   ActionsRow,
-  BoxInfo,
-  SectionTitle,
 } from "../../components/EstilosPainel.styles";
 import { PeriodSelect } from "./Dashboard.styles";
 import { DashboardHistorico, type FiltroPeriodo } from "./DashboardHistorico";
@@ -84,10 +82,7 @@ export function DashboardOperacional() {
       {abaAtiva === "operacional" ? (
         <DashboardHistorico filtroPeriodo={filtroPeriodo} />
       ) : (
-        <BoxInfo>
-          <SectionTitle>Previsões e Tendências</SectionTitle>
-          <PredicoesDashboard />
-        </BoxInfo>
+        <PredicoesDashboard />
       )}
     </ContainerPainel>
   );

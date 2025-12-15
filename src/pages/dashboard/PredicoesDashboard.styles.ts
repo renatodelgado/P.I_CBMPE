@@ -38,6 +38,7 @@ export const ControlField = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  position: relative;
 `;
 
 export const ControlLabel = styled.label`
@@ -164,4 +165,33 @@ export const ChartFooter = styled.div`
   padding-top: 1rem;
   border-top: 1px solid ${borderCard};
   text-align: center;
+`;
+
+export const SuggestionsWrapper = styled.div`
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  border: 1px solid ${borderCard};
+  border-radius: 10px;
+  background: ${bgCard};
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+  max-height: 260px;
+  overflow-y: auto;
+`;
+
+export const SuggestionItem = styled.button`
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: ${textPrimary};
+  cursor: pointer;
+  font-size: 0.95rem;
+
+  &:hover {
+    background: #F1F5F9;
+  }
 `;
